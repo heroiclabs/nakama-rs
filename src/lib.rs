@@ -4,52 +4,61 @@ pub mod api {
     pub use super::api_gen::*;
 }
 
-pub use api_gen::ApiClient;
+pub mod sync_client {
+    use super::api;
 
-const SERVER_KEY: &str = "defaultKey";
-const SERVER_URL: &str = "127.0.0.1";
+    pub fn make_request<T: nanoserde::DeJson>(
+        server: &str,
+        port: u32,
+        request: api::RestRequest<T>,
+    ) -> T {
+        let auth_header = match request.authentication {
+            api::Authentication::Basic { username, password } => {
+                format!(
+                    "Basic {}",
+                    base64::encode(&format!("{}:{}", username, password))
+                )
+            }
+            api::Authentication::Bearer { token } => {
+                format!("Bearer {}", token)
+            }
+        };
+        let method = match request.method {
+            api::Method::Post => ureq::post,
+            api::Method::Put => ureq::put,
+            api::Method::Get => ureq::get,
+            api::Method::Delete => ureq::delete,
+        };
 
-fn make_rest_request<T: nanoserde::DeJson>(request: api::RestRequest<T>) -> T {
-    let auth_header = match request.authentication {
-        api::Authentication::Basic { username, password } => {
-            format!(
-                "Basic {}",
-                base64::encode(&format!("{}:{}", username, password))
-            )
-        }
-        api::Authentication::Bearer { token } => {
-            format!("Bearer {}", token)
-        }
-    };
-    let response: String = ureq::post(&format!(
-        "{}{}?{}",
-        SERVER_URL, request.urlpath, request.query_params
-    ))
-    .set("Authorization", &auth_header)
-    .send_string(&request.body)
-    .unwrap()
-    .into_string()
-    .unwrap();
+        let response: String = method(&format!(
+            "{}:{}{}?{}",
+            server, port, request.urlpath, request.query_params
+        ))
+        .set("Authorization", &auth_header)
+        .send_string(&request.body)
+        .unwrap()
+        .into_string()
+        .unwrap();
 
-    nanoserde::DeJson::deserialize_json(&response).unwrap()
-}
+        nanoserde::DeJson::deserialize_json(&response).unwrap()
+    }
 
-#[test]
-fn auth() {
-    let api_client = ApiClient::new();
-    let request = api_client.authenticate_email(
-        SERVER_KEY,
-        "",
-        api::ApiAccountEmail {
-            email: "super@heroes.com".to_string(),
-            password: "batsignal".to_string(),
-            vars: std::collections::HashMap::new(),
-        },
-        Some(false),
-        None,
-    );
+    #[test]
+    fn auth() {
+        let request = api::authenticate_email(
+            "defaultKey",
+            "",
+            api::ApiAccountEmail {
+                email: "super@heroes.com".to_string(),
+                password: "batsignal".to_string(),
+                vars: std::collections::HashMap::new(),
+            },
+            Some(false),
+            None,
+        );
 
-    let response = make_rest_request(request);
+        let response = make_request("http://127.0.0.1", 7350, request);
 
-    println!("{:?}", response);
+        println!("{:?}", response);
+    }
 }

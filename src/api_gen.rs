@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use nanoserde::DeJson;
 
+
 #[derive(Debug, Clone)]
 pub enum Authentication {
   Basic {
@@ -15,12 +16,18 @@ pub enum Authentication {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum Method {
+    Post, Get, Put, Delete
+}
+
 #[derive(Debug, Clone)]
 pub struct RestRequest<Response> {
   pub authentication: Authentication,
   pub urlpath: String,
   pub query_params: String,
   pub body: String,
+  pub method: Method,
   _marker: std::marker::PhantomData<Response>
 }
 
@@ -1951,2318 +1958,2527 @@ impl ToRestString for RpcStatus {
 	return output;
     }
 }
+/// A healthcheck which load balancers can use to check the service.
+pub fn healthcheck(
+    bearer_token: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/healthcheck".to_string();
 
-pub struct ApiClient {
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Fetch the current user's account.
+pub fn get_account(
+    bearer_token: &str,
+) -> RestRequest<ApiAccount> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Update fields in the current user's account.
+pub fn update_account(
+    bearer_token: &str,
+    body: ApiUpdateAccountRequest,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Put;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with an Apple ID against the server.
+pub fn authenticate_apple(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountApple,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/apple".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
 }
 
-impl ApiClient {
-    pub fn new() -> ApiClient {
-       ApiClient {
-       }
-    }
-    /// A healthcheck which load balancers can use to check the service.
-    pub fn healthcheck(&self,
-        bearer_token: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/healthcheck".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Fetch the current user's account.
-    pub fn get_account(&self,
-        bearer_token: &str,
-    ) -> RestRequest<ApiAccount> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Update fields in the current user's account.
-    pub fn update_account(&self,
-        bearer_token: &str,
-        body: ApiUpdateAccountRequest,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with an Apple ID against the server.
-    pub fn authenticate_apple(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountApple,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/apple".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with a custom id against the server.
-    pub fn authenticate_custom(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountCustom,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/custom".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with a device id against the server.
-    pub fn authenticate_device(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountDevice,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/device".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with an email+password against the server.
-    pub fn authenticate_email(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountEmail,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/email".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with a Facebook OAuth token against the server.
-    pub fn authenticate_facebook(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountFacebook,
-        create: Option<bool>,
-        username: Option<&str>,
-        sync: Option<bool>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/facebook".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-	if let Some(param) = sync {
-	    query_params.push_str(&format!("sync={:?}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with a Facebook Instant Game token against the server.
-    pub fn authenticate_facebook_instant_game(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountFacebookInstantGame,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/facebookinstantgame".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with Apple's GameCenter against the server.
-    pub fn authenticate_game_center(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountGameCenter,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/gamecenter".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with Google against the server.
-    pub fn authenticate_google(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountGoogle,
-        create: Option<bool>,
-        username: Option<&str>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/google".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Authenticate a user with Steam against the server.
-    pub fn authenticate_steam(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiAccountSteam,
-        create: Option<bool>,
-        username: Option<&str>,
-        sync: Option<bool>,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/authenticate/steam".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = create {
-	    query_params.push_str(&format!("create={:?}&", param));
-	}
-	if let Some(param) = username {
-	    query_params.push_str(&format!("username={}&", param));
-	}
-	if let Some(param) = sync {
-	    query_params.push_str(&format!("sync={:?}&", param));
-	}
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add an Apple ID to the social profiles on the current user's account.
-    pub fn link_apple(&self,
-        bearer_token: &str,
-        body: ApiAccountApple,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/apple".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add a custom ID to the social profiles on the current user's account.
-    pub fn link_custom(&self,
-        bearer_token: &str,
-        body: ApiAccountCustom,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/custom".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add a device ID to the social profiles on the current user's account.
-    pub fn link_device(&self,
-        bearer_token: &str,
-        body: ApiAccountDevice,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/device".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add an email+password to the social profiles on the current user's account.
-    pub fn link_email(&self,
-        bearer_token: &str,
-        body: ApiAccountEmail,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/email".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add Facebook to the social profiles on the current user's account.
-    pub fn link_facebook(&self,
-        bearer_token: &str,
-        body: ApiAccountFacebook,
-        sync: Option<bool>,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/facebook".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = sync {
-	    query_params.push_str(&format!("sync={:?}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add Facebook Instant Game to the social profiles on the current user's account.
-    pub fn link_facebook_instant_game(&self,
-        bearer_token: &str,
-        body: ApiAccountFacebookInstantGame,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/facebookinstantgame".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add Apple's GameCenter to the social profiles on the current user's account.
-    pub fn link_game_center(&self,
-        bearer_token: &str,
-        body: ApiAccountGameCenter,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/gamecenter".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add Google to the social profiles on the current user's account.
-    pub fn link_google(&self,
-        bearer_token: &str,
-        body: ApiAccountGoogle,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/google".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add Steam to the social profiles on the current user's account.
-    pub fn link_steam(&self,
-        bearer_token: &str,
-        body: ApiLinkSteamRequest,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/link/steam".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Refresh a user's session using a refresh token retrieved from a previous authentication request.
-    pub fn session_refresh(&self,
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-        body: ApiSessionRefreshRequest,
-    ) -> RestRequest<ApiSession> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/session/refresh".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove the Apple ID from the social profiles on the current user's account.
-    pub fn unlink_apple(&self,
-        bearer_token: &str,
-        body: ApiAccountApple,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/apple".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove the custom ID from the social profiles on the current user's account.
-    pub fn unlink_custom(&self,
-        bearer_token: &str,
-        body: ApiAccountCustom,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/custom".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove the device ID from the social profiles on the current user's account.
-    pub fn unlink_device(&self,
-        bearer_token: &str,
-        body: ApiAccountDevice,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/device".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove the email+password from the social profiles on the current user's account.
-    pub fn unlink_email(&self,
-        bearer_token: &str,
-        body: ApiAccountEmail,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/email".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove Facebook from the social profiles on the current user's account.
-    pub fn unlink_facebook(&self,
-        bearer_token: &str,
-        body: ApiAccountFacebook,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/facebook".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove Facebook Instant Game profile from the social profiles on the current user's account.
-    pub fn unlink_facebook_instant_game(&self,
-        bearer_token: &str,
-        body: ApiAccountFacebookInstantGame,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/facebookinstantgame".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove Apple's GameCenter from the social profiles on the current user's account.
-    pub fn unlink_game_center(&self,
-        bearer_token: &str,
-        body: ApiAccountGameCenter,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/gamecenter".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove Google from the social profiles on the current user's account.
-    pub fn unlink_google(&self,
-        bearer_token: &str,
-        body: ApiAccountGoogle,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/google".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Remove Steam from the social profiles on the current user's account.
-    pub fn unlink_steam(&self,
-        bearer_token: &str,
-        body: ApiAccountSteam,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/account/unlink/steam".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List a channel's message history.
-    pub fn list_channel_messages(&self,
-        bearer_token: &str,
-        channel_id: &str,
-        limit: Option<i32>,
-        forward: Option<bool>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiChannelMessageList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/channel/{channelId}".to_string();
-        urlpath = urlpath.replace("{channelId}", channel_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = forward {
-	    query_params.push_str(&format!("forward={:?}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Submit an event for processing in the server's registered runtime custom events handler.
-    pub fn event(&self,
-        bearer_token: &str,
-        body: ApiEvent,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/event".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Delete one or more users by ID or username.
-    pub fn delete_friends(&self,
-        bearer_token: &str,
-        ids: &[String],
-        usernames: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in ids
-	{
-	    query_params.push_str(&format!("ids={:?}&", elem));
-	}
-	for elem in usernames
-	{
-	    query_params.push_str(&format!("usernames={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List all friends for the current user.
-    pub fn list_friends(&self,
-        bearer_token: &str,
-        limit: Option<i32>,
-        state: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiFriendList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = state {
-	    query_params.push_str(&format!("state={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add friends by ID or username to a user's account.
-    pub fn add_friends(&self,
-        bearer_token: &str,
-        ids: &[String],
-        usernames: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in ids
-	{
-	    query_params.push_str(&format!("ids={:?}&", elem));
-	}
-	for elem in usernames
-	{
-	    query_params.push_str(&format!("usernames={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Block one or more users by ID or username.
-    pub fn block_friends(&self,
-        bearer_token: &str,
-        ids: &[String],
-        usernames: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend/block".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in ids
-	{
-	    query_params.push_str(&format!("ids={:?}&", elem));
-	}
-	for elem in usernames
-	{
-	    query_params.push_str(&format!("usernames={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Import Facebook friends and add them to a user's account.
-    pub fn import_facebook_friends(&self,
-        bearer_token: &str,
-        body: ApiAccountFacebook,
-        reset: Option<bool>,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend/facebook".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = reset {
-	    query_params.push_str(&format!("reset={:?}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Import Steam friends and add them to a user's account.
-    pub fn import_steam_friends(&self,
-        bearer_token: &str,
-        body: ApiAccountSteam,
-        reset: Option<bool>,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/friend/steam".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = reset {
-	    query_params.push_str(&format!("reset={:?}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List groups based on given filters.
-    pub fn list_groups(&self,
-        bearer_token: &str,
-        name: Option<&str>,
-        cursor: Option<&str>,
-        limit: Option<i32>,
-    ) -> RestRequest<ApiGroupList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = name {
-	    query_params.push_str(&format!("name={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Create a new group with the current user as the owner.
-    pub fn create_group(&self,
-        bearer_token: &str,
-        body: ApiCreateGroupRequest,
-    ) -> RestRequest<ApiGroup> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Delete a group by ID.
-    pub fn delete_group(&self,
-        bearer_token: &str,
-        group_id: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Update fields in a given group.
-    pub fn update_group(&self,
-        bearer_token: &str,
-        group_id: &str,
-        body: ApiUpdateGroupRequest,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Add users to a group.
-    pub fn add_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        user_ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/add".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in user_ids
-	{
-	    query_params.push_str(&format!("user_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Ban a set of users from a group.
-    pub fn ban_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        user_ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/ban".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in user_ids
-	{
-	    query_params.push_str(&format!("user_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Demote a set of users in a group to the next role down.
-    pub fn demote_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        user_ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/demote".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in user_ids
-	{
-	    query_params.push_str(&format!("user_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Immediately join an open group, or request to join a closed one.
-    pub fn join_group(&self,
-        bearer_token: &str,
-        group_id: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/join".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Kick a set of users from a group.
-    pub fn kick_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        user_ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/kick".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in user_ids
-	{
-	    query_params.push_str(&format!("user_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Leave a group the user is a member of.
-    pub fn leave_group(&self,
-        bearer_token: &str,
-        group_id: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/leave".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Promote a set of users in a group to the next role up.
-    pub fn promote_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        user_ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/promote".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in user_ids
-	{
-	    query_params.push_str(&format!("user_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List all users that are part of a group.
-    pub fn list_group_users(&self,
-        bearer_token: &str,
-        group_id: &str,
-        limit: Option<i32>,
-        state: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiGroupUserList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/group/{groupId}/user".to_string();
-        urlpath = urlpath.replace("{groupId}", group_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = state {
-	    query_params.push_str(&format!("state={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Delete a leaderboard record.
-    pub fn delete_leaderboard_record(&self,
-        bearer_token: &str,
-        leaderboard_id: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
-        urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List leaderboard records.
-    pub fn list_leaderboard_records(&self,
-        bearer_token: &str,
-        leaderboard_id: &str,
-        owner_ids: &[String],
-        limit: Option<i32>,
-        cursor: Option<&str>,
-        expiry: Option<&str>,
-    ) -> RestRequest<ApiLeaderboardRecordList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
-        urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in owner_ids
-	{
-	    query_params.push_str(&format!("owner_ids={:?}&", elem));
-	}
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-	if let Some(param) = expiry {
-	    query_params.push_str(&format!("expiry={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Write a record to a leaderboard.
-    pub fn write_leaderboard_record(&self,
-        bearer_token: &str,
-        leaderboard_id: &str,
-        body: WriteLeaderboardRecordRequestLeaderboardRecordWrite,
-    ) -> RestRequest<ApiLeaderboardRecord> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
-        urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List leaderboard records that belong to a user.
-    pub fn list_leaderboard_records_around_owner(&self,
-        bearer_token: &str,
-        leaderboard_id: &str,
-        owner_id: &str,
-        limit: Option<i32>,
-        expiry: Option<&str>,
-    ) -> RestRequest<ApiLeaderboardRecordList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/leaderboard/{leaderboardId}/owner/{ownerId}".to_string();
-        urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
-        urlpath = urlpath.replace("{ownerId}", owner_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = expiry {
-	    query_params.push_str(&format!("expiry={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Fetch list of running matches.
-    pub fn list_matches(&self,
-        bearer_token: &str,
-        limit: Option<i32>,
-        authoritative: Option<bool>,
-        label: Option<&str>,
-        min_size: Option<i32>,
-        max_size: Option<i32>,
-        query: Option<&str>,
-    ) -> RestRequest<ApiMatchList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/match".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = authoritative {
-	    query_params.push_str(&format!("authoritative={:?}&", param));
-	}
-	if let Some(param) = label {
-	    query_params.push_str(&format!("label={}&", param));
-	}
-	if let Some(param) = min_size {
-	    query_params.push_str(&format!("min_size={}&", param));
-	}
-	if let Some(param) = max_size {
-	    query_params.push_str(&format!("max_size={}&", param));
-	}
-	if let Some(param) = query {
-	    query_params.push_str(&format!("query={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Delete one or more notifications for the current user.
-    pub fn delete_notifications(&self,
-        bearer_token: &str,
-        ids: &[String],
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/notification".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in ids
-	{
-	    query_params.push_str(&format!("ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Fetch list of notifications.
-    pub fn list_notifications(&self,
-        bearer_token: &str,
-        limit: Option<i32>,
-        cacheable_cursor: Option<&str>,
-    ) -> RestRequest<ApiNotificationList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/notification".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cacheable_cursor {
-	    query_params.push_str(&format!("cacheable_cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Execute a Lua function on the server.
-    pub fn rpc_func_2(&self,
-        bearer_token: &str,
-        id: &str,
-        payload: Option<&str>,
-        http_key: Option<&str>,
-    ) -> RestRequest<ApiRpc> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/rpc/{id}".to_string();
-        urlpath = urlpath.replace("{id}", id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = payload {
-	    query_params.push_str(&format!("payload={}&", param));
-	}
-	if let Some(param) = http_key {
-	    query_params.push_str(&format!("http_key={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Execute a Lua function on the server.
-    pub fn rpc_func(&self,
-        bearer_token: &str,
-        id: &str,
-        body: &str,
-        http_key: Option<&str>,
-    ) -> RestRequest<ApiRpc> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/rpc/{id}".to_string();
-        urlpath = urlpath.replace("{id}", id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = http_key {
-	    query_params.push_str(&format!("http_key={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
-    pub fn session_logout(&self,
-        bearer_token: &str,
-        body: ApiSessionLogoutRequest,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/session/logout".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Get storage objects.
-    pub fn read_storage_objects(&self,
-        bearer_token: &str,
-        body: ApiReadStorageObjectsRequest,
-    ) -> RestRequest<ApiStorageObjects> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/storage".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Write objects into the storage engine.
-    pub fn write_storage_objects(&self,
-        bearer_token: &str,
-        body: ApiWriteStorageObjectsRequest,
-    ) -> RestRequest<ApiStorageObjectAcks> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/storage".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Delete one or more objects by ID or username.
-    pub fn delete_storage_objects(&self,
-        bearer_token: &str,
-        body: ApiDeleteStorageObjectsRequest,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/storage/delete".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List publicly readable storage objects in a given collection.
-    pub fn list_storage_objects(&self,
-        bearer_token: &str,
-        collection: &str,
-        user_id: Option<&str>,
-        limit: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiStorageObjectList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/storage/{collection}".to_string();
-        urlpath = urlpath.replace("{collection}", collection);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = user_id {
-	    query_params.push_str(&format!("user_id={}&", param));
-	}
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List publicly readable storage objects in a given collection.
-    pub fn list_storage_objects_2(&self,
-        bearer_token: &str,
-        collection: &str,
-        user_id: &str,
-        limit: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiStorageObjectList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/storage/{collection}/{userId}".to_string();
-        urlpath = urlpath.replace("{collection}", collection);
-        urlpath = urlpath.replace("{userId}", user_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List current or upcoming tournaments.
-    pub fn list_tournaments(&self,
-        bearer_token: &str,
-        category_start: Option<i32>,
-        category_end: Option<i32>,
-        start_time: Option<i32>,
-        end_time: Option<i32>,
-        limit: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiTournamentList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/tournament".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = category_start {
-	    query_params.push_str(&format!("category_start={}&", param));
-	}
-	if let Some(param) = category_end {
-	    query_params.push_str(&format!("category_end={}&", param));
-	}
-	if let Some(param) = start_time {
-	    query_params.push_str(&format!("start_time={}&", param));
-	}
-	if let Some(param) = end_time {
-	    query_params.push_str(&format!("end_time={}&", param));
-	}
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List tournament records.
-    pub fn list_tournament_records(&self,
-        bearer_token: &str,
-        tournament_id: &str,
-        owner_ids: &[String],
-        limit: Option<i32>,
-        cursor: Option<&str>,
-        expiry: Option<&str>,
-    ) -> RestRequest<ApiTournamentRecordList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/tournament/{tournamentId}".to_string();
-        urlpath = urlpath.replace("{tournamentId}", tournament_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in owner_ids
-	{
-	    query_params.push_str(&format!("owner_ids={:?}&", elem));
-	}
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-	if let Some(param) = expiry {
-	    query_params.push_str(&format!("expiry={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Write a record to a tournament.
-    pub fn write_tournament_record(&self,
-        bearer_token: &str,
-        tournament_id: &str,
-        body: WriteTournamentRecordRequestTournamentRecordWrite,
-    ) -> RestRequest<ApiLeaderboardRecord> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/tournament/{tournamentId}".to_string();
-        urlpath = urlpath.replace("{tournamentId}", tournament_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        let body_json = body.to_string();
-        
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Attempt to join an open and running tournament.
-    pub fn join_tournament(&self,
-        bearer_token: &str,
-        tournament_id: &str,
-    ) -> RestRequest<()> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/tournament/{tournamentId}/join".to_string();
-        urlpath = urlpath.replace("{tournamentId}", tournament_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List tournament records for a given owner.
-    pub fn list_tournament_records_around_owner(&self,
-        bearer_token: &str,
-        tournament_id: &str,
-        owner_id: &str,
-        limit: Option<i32>,
-        expiry: Option<&str>,
-    ) -> RestRequest<ApiTournamentRecordList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/tournament/{tournamentId}/owner/{ownerId}".to_string();
-        urlpath = urlpath.replace("{tournamentId}", tournament_id);
-        urlpath = urlpath.replace("{ownerId}", owner_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = expiry {
-	    query_params.push_str(&format!("expiry={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// Fetch zero or more users by ID and/or username.
-    pub fn get_users(&self,
-        bearer_token: &str,
-        ids: &[String],
-        usernames: &[String],
-        facebook_ids: &[String],
-    ) -> RestRequest<ApiUsers> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/user".to_string();
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	for elem in ids
-	{
-	    query_params.push_str(&format!("ids={:?}&", elem));
-	}
-	for elem in usernames
-	{
-	    query_params.push_str(&format!("usernames={:?}&", elem));
-	}
-	for elem in facebook_ids
-	{
-	    query_params.push_str(&format!("facebook_ids={:?}&", elem));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-    /// List groups the current user belongs to.
-    pub fn list_user_groups(&self,
-        bearer_token: &str,
-        user_id: &str,
-        limit: Option<i32>,
-        state: Option<i32>,
-        cursor: Option<&str>,
-    ) -> RestRequest<ApiUserGroupList> {
-        #[allow(unused_mut)]
-        let mut urlpath = "/v2/user/{userId}/group".to_string();
-        urlpath = urlpath.replace("{userId}", user_id);
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-	if let Some(param) = limit {
-	    query_params.push_str(&format!("limit={}&", param));
-	}
-	if let Some(param) = state {
-	    query_params.push_str(&format!("state={}&", param));
-	}
-	if let Some(param) = cursor {
-	    query_params.push_str(&format!("cursor={}&", param));
-	}
-
-        let authentication =
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-        
-        let body_json = String::new();
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with a custom id against the server.
+pub fn authenticate_custom(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountCustom,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/custom".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with a device id against the server.
+pub fn authenticate_device(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountDevice,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/device".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with an email+password against the server.
+pub fn authenticate_email(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountEmail,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/email".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with a Facebook OAuth token against the server.
+pub fn authenticate_facebook(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountFacebook,
+    create: Option<bool>,
+    username: Option<&str>,
+    sync: Option<bool>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/facebook".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+if let Some(param) = sync {
+    query_params.push_str(&format!("sync={:?}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with a Facebook Instant Game token against the server.
+pub fn authenticate_facebook_instant_game(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountFacebookInstantGame,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/facebookinstantgame".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with Apple's GameCenter against the server.
+pub fn authenticate_game_center(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountGameCenter,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/gamecenter".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with Google against the server.
+pub fn authenticate_google(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountGoogle,
+    create: Option<bool>,
+    username: Option<&str>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/google".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Authenticate a user with Steam against the server.
+pub fn authenticate_steam(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiAccountSteam,
+    create: Option<bool>,
+    username: Option<&str>,
+    sync: Option<bool>,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/authenticate/steam".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = create {
+    query_params.push_str(&format!("create={:?}&", param));
+}
+if let Some(param) = username {
+    query_params.push_str(&format!("username={}&", param));
+}
+if let Some(param) = sync {
+    query_params.push_str(&format!("sync={:?}&", param));
+}
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add an Apple ID to the social profiles on the current user's account.
+pub fn link_apple(
+    bearer_token: &str,
+    body: ApiAccountApple,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/apple".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add a custom ID to the social profiles on the current user's account.
+pub fn link_custom(
+    bearer_token: &str,
+    body: ApiAccountCustom,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/custom".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add a device ID to the social profiles on the current user's account.
+pub fn link_device(
+    bearer_token: &str,
+    body: ApiAccountDevice,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/device".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add an email+password to the social profiles on the current user's account.
+pub fn link_email(
+    bearer_token: &str,
+    body: ApiAccountEmail,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/email".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add Facebook to the social profiles on the current user's account.
+pub fn link_facebook(
+    bearer_token: &str,
+    body: ApiAccountFacebook,
+    sync: Option<bool>,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/facebook".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = sync {
+    query_params.push_str(&format!("sync={:?}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add Facebook Instant Game to the social profiles on the current user's account.
+pub fn link_facebook_instant_game(
+    bearer_token: &str,
+    body: ApiAccountFacebookInstantGame,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/facebookinstantgame".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add Apple's GameCenter to the social profiles on the current user's account.
+pub fn link_game_center(
+    bearer_token: &str,
+    body: ApiAccountGameCenter,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/gamecenter".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add Google to the social profiles on the current user's account.
+pub fn link_google(
+    bearer_token: &str,
+    body: ApiAccountGoogle,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/google".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add Steam to the social profiles on the current user's account.
+pub fn link_steam(
+    bearer_token: &str,
+    body: ApiLinkSteamRequest,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/link/steam".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Refresh a user's session using a refresh token retrieved from a previous authentication request.
+pub fn session_refresh(
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+    body: ApiSessionRefreshRequest,
+) -> RestRequest<ApiSession> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/session/refresh".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove the Apple ID from the social profiles on the current user's account.
+pub fn unlink_apple(
+    bearer_token: &str,
+    body: ApiAccountApple,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/apple".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove the custom ID from the social profiles on the current user's account.
+pub fn unlink_custom(
+    bearer_token: &str,
+    body: ApiAccountCustom,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/custom".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove the device ID from the social profiles on the current user's account.
+pub fn unlink_device(
+    bearer_token: &str,
+    body: ApiAccountDevice,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/device".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove the email+password from the social profiles on the current user's account.
+pub fn unlink_email(
+    bearer_token: &str,
+    body: ApiAccountEmail,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/email".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove Facebook from the social profiles on the current user's account.
+pub fn unlink_facebook(
+    bearer_token: &str,
+    body: ApiAccountFacebook,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/facebook".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove Facebook Instant Game profile from the social profiles on the current user's account.
+pub fn unlink_facebook_instant_game(
+    bearer_token: &str,
+    body: ApiAccountFacebookInstantGame,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/facebookinstantgame".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove Apple's GameCenter from the social profiles on the current user's account.
+pub fn unlink_game_center(
+    bearer_token: &str,
+    body: ApiAccountGameCenter,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/gamecenter".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove Google from the social profiles on the current user's account.
+pub fn unlink_google(
+    bearer_token: &str,
+    body: ApiAccountGoogle,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/google".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Remove Steam from the social profiles on the current user's account.
+pub fn unlink_steam(
+    bearer_token: &str,
+    body: ApiAccountSteam,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/account/unlink/steam".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List a channel's message history.
+pub fn list_channel_messages(
+    bearer_token: &str,
+    channel_id: &str,
+    limit: Option<i32>,
+    forward: Option<bool>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiChannelMessageList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/channel/{channelId}".to_string();
+    urlpath = urlpath.replace("{channelId}", channel_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = forward {
+    query_params.push_str(&format!("forward={:?}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Submit an event for processing in the server's registered runtime custom events handler.
+pub fn event(
+    bearer_token: &str,
+    body: ApiEvent,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/event".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Delete one or more users by ID or username.
+pub fn delete_friends(
+    bearer_token: &str,
+    ids: &[String],
+    usernames: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in ids
+{
+    query_params.push_str(&format!("ids={:?}&", elem));
+}
+for elem in usernames
+{
+    query_params.push_str(&format!("usernames={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Delete;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List all friends for the current user.
+pub fn list_friends(
+    bearer_token: &str,
+    limit: Option<i32>,
+    state: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiFriendList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = state {
+    query_params.push_str(&format!("state={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add friends by ID or username to a user's account.
+pub fn add_friends(
+    bearer_token: &str,
+    ids: &[String],
+    usernames: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in ids
+{
+    query_params.push_str(&format!("ids={:?}&", elem));
+}
+for elem in usernames
+{
+    query_params.push_str(&format!("usernames={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Block one or more users by ID or username.
+pub fn block_friends(
+    bearer_token: &str,
+    ids: &[String],
+    usernames: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend/block".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in ids
+{
+    query_params.push_str(&format!("ids={:?}&", elem));
+}
+for elem in usernames
+{
+    query_params.push_str(&format!("usernames={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Import Facebook friends and add them to a user's account.
+pub fn import_facebook_friends(
+    bearer_token: &str,
+    body: ApiAccountFacebook,
+    reset: Option<bool>,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend/facebook".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = reset {
+    query_params.push_str(&format!("reset={:?}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Import Steam friends and add them to a user's account.
+pub fn import_steam_friends(
+    bearer_token: &str,
+    body: ApiAccountSteam,
+    reset: Option<bool>,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/friend/steam".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = reset {
+    query_params.push_str(&format!("reset={:?}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List groups based on given filters.
+pub fn list_groups(
+    bearer_token: &str,
+    name: Option<&str>,
+    cursor: Option<&str>,
+    limit: Option<i32>,
+) -> RestRequest<ApiGroupList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = name {
+    query_params.push_str(&format!("name={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Create a new group with the current user as the owner.
+pub fn create_group(
+    bearer_token: &str,
+    body: ApiCreateGroupRequest,
+) -> RestRequest<ApiGroup> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Delete a group by ID.
+pub fn delete_group(
+    bearer_token: &str,
+    group_id: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Delete;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Update fields in a given group.
+pub fn update_group(
+    bearer_token: &str,
+    group_id: &str,
+    body: ApiUpdateGroupRequest,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Put;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Add users to a group.
+pub fn add_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    user_ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/add".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in user_ids
+{
+    query_params.push_str(&format!("user_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Ban a set of users from a group.
+pub fn ban_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    user_ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/ban".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in user_ids
+{
+    query_params.push_str(&format!("user_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Demote a set of users in a group to the next role down.
+pub fn demote_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    user_ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/demote".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in user_ids
+{
+    query_params.push_str(&format!("user_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Immediately join an open group, or request to join a closed one.
+pub fn join_group(
+    bearer_token: &str,
+    group_id: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/join".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Kick a set of users from a group.
+pub fn kick_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    user_ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/kick".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in user_ids
+{
+    query_params.push_str(&format!("user_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Leave a group the user is a member of.
+pub fn leave_group(
+    bearer_token: &str,
+    group_id: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/leave".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Promote a set of users in a group to the next role up.
+pub fn promote_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    user_ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/promote".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in user_ids
+{
+    query_params.push_str(&format!("user_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List all users that are part of a group.
+pub fn list_group_users(
+    bearer_token: &str,
+    group_id: &str,
+    limit: Option<i32>,
+    state: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiGroupUserList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/group/{groupId}/user".to_string();
+    urlpath = urlpath.replace("{groupId}", group_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = state {
+    query_params.push_str(&format!("state={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Delete a leaderboard record.
+pub fn delete_leaderboard_record(
+    bearer_token: &str,
+    leaderboard_id: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
+    urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Delete;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List leaderboard records.
+pub fn list_leaderboard_records(
+    bearer_token: &str,
+    leaderboard_id: &str,
+    owner_ids: &[String],
+    limit: Option<i32>,
+    cursor: Option<&str>,
+    expiry: Option<&str>,
+) -> RestRequest<ApiLeaderboardRecordList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
+    urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in owner_ids
+{
+    query_params.push_str(&format!("owner_ids={:?}&", elem));
+}
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+if let Some(param) = expiry {
+    query_params.push_str(&format!("expiry={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Write a record to a leaderboard.
+pub fn write_leaderboard_record(
+    bearer_token: &str,
+    leaderboard_id: &str,
+    body: WriteLeaderboardRecordRequestLeaderboardRecordWrite,
+) -> RestRequest<ApiLeaderboardRecord> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
+    urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List leaderboard records that belong to a user.
+pub fn list_leaderboard_records_around_owner(
+    bearer_token: &str,
+    leaderboard_id: &str,
+    owner_id: &str,
+    limit: Option<i32>,
+    expiry: Option<&str>,
+) -> RestRequest<ApiLeaderboardRecordList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/leaderboard/{leaderboardId}/owner/{ownerId}".to_string();
+    urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
+    urlpath = urlpath.replace("{ownerId}", owner_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = expiry {
+    query_params.push_str(&format!("expiry={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Fetch list of running matches.
+pub fn list_matches(
+    bearer_token: &str,
+    limit: Option<i32>,
+    authoritative: Option<bool>,
+    label: Option<&str>,
+    min_size: Option<i32>,
+    max_size: Option<i32>,
+    query: Option<&str>,
+) -> RestRequest<ApiMatchList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/match".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = authoritative {
+    query_params.push_str(&format!("authoritative={:?}&", param));
+}
+if let Some(param) = label {
+    query_params.push_str(&format!("label={}&", param));
+}
+if let Some(param) = min_size {
+    query_params.push_str(&format!("min_size={}&", param));
+}
+if let Some(param) = max_size {
+    query_params.push_str(&format!("max_size={}&", param));
+}
+if let Some(param) = query {
+    query_params.push_str(&format!("query={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Delete one or more notifications for the current user.
+pub fn delete_notifications(
+    bearer_token: &str,
+    ids: &[String],
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/notification".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in ids
+{
+    query_params.push_str(&format!("ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Delete;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Fetch list of notifications.
+pub fn list_notifications(
+    bearer_token: &str,
+    limit: Option<i32>,
+    cacheable_cursor: Option<&str>,
+) -> RestRequest<ApiNotificationList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/notification".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cacheable_cursor {
+    query_params.push_str(&format!("cacheable_cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Execute a Lua function on the server.
+pub fn rpc_func_2(
+    bearer_token: &str,
+    id: &str,
+    payload: Option<&str>,
+    http_key: Option<&str>,
+) -> RestRequest<ApiRpc> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/rpc/{id}".to_string();
+    urlpath = urlpath.replace("{id}", id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = payload {
+    query_params.push_str(&format!("payload={}&", param));
+}
+if let Some(param) = http_key {
+    query_params.push_str(&format!("http_key={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Execute a Lua function on the server.
+pub fn rpc_func(
+    bearer_token: &str,
+    id: &str,
+    body: &str,
+    http_key: Option<&str>,
+) -> RestRequest<ApiRpc> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/rpc/{id}".to_string();
+    urlpath = urlpath.replace("{id}", id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = http_key {
+    query_params.push_str(&format!("http_key={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
+pub fn session_logout(
+    bearer_token: &str,
+    body: ApiSessionLogoutRequest,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/session/logout".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Get storage objects.
+pub fn read_storage_objects(
+    bearer_token: &str,
+    body: ApiReadStorageObjectsRequest,
+) -> RestRequest<ApiStorageObjects> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/storage".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Write objects into the storage engine.
+pub fn write_storage_objects(
+    bearer_token: &str,
+    body: ApiWriteStorageObjectsRequest,
+) -> RestRequest<ApiStorageObjectAcks> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/storage".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Put;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Delete one or more objects by ID or username.
+pub fn delete_storage_objects(
+    bearer_token: &str,
+    body: ApiDeleteStorageObjectsRequest,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/storage/delete".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Put;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List publicly readable storage objects in a given collection.
+pub fn list_storage_objects(
+    bearer_token: &str,
+    collection: &str,
+    user_id: Option<&str>,
+    limit: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiStorageObjectList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/storage/{collection}".to_string();
+    urlpath = urlpath.replace("{collection}", collection);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = user_id {
+    query_params.push_str(&format!("user_id={}&", param));
+}
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List publicly readable storage objects in a given collection.
+pub fn list_storage_objects_2(
+    bearer_token: &str,
+    collection: &str,
+    user_id: &str,
+    limit: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiStorageObjectList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/storage/{collection}/{userId}".to_string();
+    urlpath = urlpath.replace("{collection}", collection);
+    urlpath = urlpath.replace("{userId}", user_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List current or upcoming tournaments.
+pub fn list_tournaments(
+    bearer_token: &str,
+    category_start: Option<i32>,
+    category_end: Option<i32>,
+    start_time: Option<i32>,
+    end_time: Option<i32>,
+    limit: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiTournamentList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = category_start {
+    query_params.push_str(&format!("category_start={}&", param));
+}
+if let Some(param) = category_end {
+    query_params.push_str(&format!("category_end={}&", param));
+}
+if let Some(param) = start_time {
+    query_params.push_str(&format!("start_time={}&", param));
+}
+if let Some(param) = end_time {
+    query_params.push_str(&format!("end_time={}&", param));
+}
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List tournament records.
+pub fn list_tournament_records(
+    bearer_token: &str,
+    tournament_id: &str,
+    owner_ids: &[String],
+    limit: Option<i32>,
+    cursor: Option<&str>,
+    expiry: Option<&str>,
+) -> RestRequest<ApiTournamentRecordList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament/{tournamentId}".to_string();
+    urlpath = urlpath.replace("{tournamentId}", tournament_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in owner_ids
+{
+    query_params.push_str(&format!("owner_ids={:?}&", elem));
+}
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+if let Some(param) = expiry {
+    query_params.push_str(&format!("expiry={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Write a record to a tournament.
+pub fn write_tournament_record(
+    bearer_token: &str,
+    tournament_id: &str,
+    body: WriteTournamentRecordRequestTournamentRecordWrite,
+) -> RestRequest<ApiLeaderboardRecord> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament/{tournamentId}".to_string();
+    urlpath = urlpath.replace("{tournamentId}", tournament_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Put;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Attempt to join an open and running tournament.
+pub fn join_tournament(
+    bearer_token: &str,
+    tournament_id: &str,
+) -> RestRequest<()> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament/{tournamentId}/join".to_string();
+    urlpath = urlpath.replace("{tournamentId}", tournament_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List tournament records for a given owner.
+pub fn list_tournament_records_around_owner(
+    bearer_token: &str,
+    tournament_id: &str,
+    owner_id: &str,
+    limit: Option<i32>,
+    expiry: Option<&str>,
+) -> RestRequest<ApiTournamentRecordList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament/{tournamentId}/owner/{ownerId}".to_string();
+    urlpath = urlpath.replace("{tournamentId}", tournament_id);
+    urlpath = urlpath.replace("{ownerId}", owner_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = expiry {
+    query_params.push_str(&format!("expiry={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Fetch zero or more users by ID and/or username.
+pub fn get_users(
+    bearer_token: &str,
+    ids: &[String],
+    usernames: &[String],
+    facebook_ids: &[String],
+) -> RestRequest<ApiUsers> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/user".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+for elem in ids
+{
+    query_params.push_str(&format!("ids={:?}&", elem));
+}
+for elem in usernames
+{
+    query_params.push_str(&format!("usernames={:?}&", elem));
+}
+for elem in facebook_ids
+{
+    query_params.push_str(&format!("facebook_ids={:?}&", elem));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// List groups the current user belongs to.
+pub fn list_user_groups(
+    bearer_token: &str,
+    user_id: &str,
+    limit: Option<i32>,
+    state: Option<i32>,
+    cursor: Option<&str>,
+) -> RestRequest<ApiUserGroupList> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/user/{userId}/group".to_string();
+    urlpath = urlpath.replace("{userId}", user_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+if let Some(param) = limit {
+    query_params.push_str(&format!("limit={}&", param));
+}
+if let Some(param) = state {
+    query_params.push_str(&format!("state={}&", param));
+}
+if let Some(param) = cursor {
+    query_params.push_str(&format!("cursor={}&", param));
+}
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    
+    let body_json = String::new();
+
+    let method = Method::Get;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
     }
 }

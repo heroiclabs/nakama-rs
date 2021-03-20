@@ -31,6 +31,7 @@ use std::collections::HashMap;
 
 use nanoserde::DeJson;
 
+
 #[derive(Debug, Clone)]
 pub enum Authentication {
   Basic {
@@ -42,12 +43,18 @@ pub enum Authentication {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum Method {
+    Post, Get, Put, Delete
+}
+
 #[derive(Debug, Clone)]
 pub struct RestRequest<Response> {
   pub authentication: Authentication,
   pub urlpath: String,
   pub query_params: String,
   pub body: String,
+  pub method: Method,
   _marker: std::marker::PhantomData<Response>
 }
 
@@ -147,161 +154,154 @@ impl ToRestString for {{ $classname }} {
 }
 {{- end }}
 
-pub struct ApiClient {
-}
-
-impl ApiClient {
-    pub fn new() -> ApiClient {
-       ApiClient {
-       }
-    }
-
-    {{- range $url, $path := .Paths }}
-    {{- range $method, $operation := $path}}
-    /// {{ $operation.Summary | stripNewlines }}
-    pub fn {{ $operation.OperationId | stripOperationPrefix | camelCase | snakeCase  }}(&self,
-    {{- if $operation.Security }}
-    {{- with (index $operation.Security 0) }}
-        {{- range $key, $value := . }}
-            {{- if eq $key "BasicAuth" }}
-        basic_auth_username: &str,
-        basic_auth_password: &str,
-            {{- else if eq $key "HttpKeyAuth" }}
-        bearer_token: &str,
-            {{- end }}
-        {{- end }}
+{{- range $url, $path := .Paths }}
+{{- range $method, $operation := $path}}
+/// {{ $operation.Summary | stripNewlines }}
+pub fn {{ $operation.OperationId | stripOperationPrefix | camelCase | snakeCase	 }}(
+{{- if $operation.Security }}
+{{- with (index $operation.Security 0) }}
+    {{- range $key, $value := . }}
+	{{- if eq $key "BasicAuth" }}
+    basic_auth_username: &str,
+    basic_auth_password: &str,
+	{{- else if eq $key "HttpKeyAuth" }}
+    bearer_token: &str,
+	{{- end }}
     {{- end }}
+{{- end }}
+{{- else }}
+    bearer_token: &str,
+{{- end }}
+{{- range $parameter := $operation.Parameters }}
+{{- $argname := $parameter.Name | snakeCase }}
+{{- if eq $parameter.In "path" }}
+    {{- if eq $parameter.Type "string" }}
+    {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}&str{{- if not $parameter.Required }}>{{- end }}
     {{- else }}
-        bearer_token: &str,
+    {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}{{ $parameter.Type }}{{- if not $parameter.Required }}>{{- end }}
     {{- end }}
+{{- else if eq $parameter.In "body" }}
+    {{- if eq $parameter.Schema.Type "string" }}
+    {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}&str{{- if not $parameter.Required }}>{{- end }}
+    {{- else }}
+    {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}{{ $parameter.Schema.Ref | cleanRef }}{{- if not $parameter.Required }}>{{- end }}
+    {{- end }}
+{{- else if eq $parameter.Type "array"}}
+    {{- if eq $parameter.Items.Type "string" }}
+    {{ $argname }}: &[String]
+    {{- else }}
+    {{ $argname }}: &[{{ $parameter.Items.Type }}]
+    {{- end }}
+{{- else if eq $parameter.Type "object"}}
+    {{- if eq $parameter.AdditionalProperties.Type "string"}}
+IDictionary<string, string> {{ $parameter.Name }}
+    {{- else if eq $parameter.Items.Type "integer"}}
+IDictionary<string, int> {{ $parameter.Name }}
+    {{- else if eq $parameter.Items.Type "boolean"}}
+IDictionary<string, int> {{ $parameter.Name }}
+    {{- else}}
+IDictionary<string, {{ $parameter.Items.Type }}> {{ $parameter.Name }}
+    {{- end}}
+{{- else if eq $parameter.Type "integer" }}
+    {{ $argname }}: Option<i32>
+{{- else if eq $parameter.Type "boolean" }}
+    {{ $argname }}: Option<bool>
+{{- else if eq $parameter.Type "string" }}
+    {{ $argname }}: Option<&str>
+{{- else }}
+    {{ $argname }}: Option<{{ $parameter.Type }}>
+{{- end }},
+{{- end }}
+{{- if $operation.Responses.Ok.Schema.Ref }}
+) -> RestRequest<{{ $operation.Responses.Ok.Schema.Ref | cleanRef }}> {
+{{- else }}
+) -> RestRequest<()> {
+{{- end }}
+    #[allow(unused_mut)]
+    let mut urlpath = "{{- $url }}".to_string();
+
     {{- range $parameter := $operation.Parameters }}
     {{- $argname := $parameter.Name | snakeCase }}
     {{- if eq $parameter.In "path" }}
-        {{- if eq $parameter.Type "string" }}
-        {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}&str{{- if not $parameter.Required }}>{{- end }}
-        {{- else }}
-        {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}{{ $parameter.Type }}{{- if not $parameter.Required }}>{{- end }}
-        {{- end }}
-    {{- else if eq $parameter.In "body" }}
-        {{- if eq $parameter.Schema.Type "string" }}
-        {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}&str{{- if not $parameter.Required }}>{{- end }}
-        {{- else }}
-        {{ $argname }}:{{ " " }}{{- if not $parameter.Required }}Option<{{- end }}{{ $parameter.Schema.Ref | cleanRef }}{{- if not $parameter.Required }}>{{- end }}
-        {{- end }}
-    {{- else if eq $parameter.Type "array"}}
-        {{- if eq $parameter.Items.Type "string" }}
-        {{ $argname }}: &[String]
-        {{- else }}
-        {{ $argname }}: &[{{ $parameter.Items.Type }}]
-        {{- end }}
-    {{- else if eq $parameter.Type "object"}}
-        {{- if eq $parameter.AdditionalProperties.Type "string"}}
-    IDictionary<string, string> {{ $parameter.Name }}
-        {{- else if eq $parameter.Items.Type "integer"}}
-    IDictionary<string, int> {{ $parameter.Name }}
-        {{- else if eq $parameter.Items.Type "boolean"}}
-    IDictionary<string, int> {{ $parameter.Name }}
-        {{- else}}
-    IDictionary<string, {{ $parameter.Items.Type }}> {{ $parameter.Name }}
-        {{- end}}
-    {{- else if eq $parameter.Type "integer" }}
-        {{ $argname }}: Option<i32>
-    {{- else if eq $parameter.Type "boolean" }}
-        {{ $argname }}: Option<bool>
-    {{- else if eq $parameter.Type "string" }}
-        {{ $argname }}: Option<&str>
-    {{- else }}
-        {{ $argname }}: Option<{{ $parameter.Type }}>
-    {{- end }},
-    {{- end }}
-    {{- if $operation.Responses.Ok.Schema.Ref }}
-    ) -> RestRequest<{{ $operation.Responses.Ok.Schema.Ref | cleanRef }}> {
-    {{- else }}
-    ) -> RestRequest<()> {
-    {{- end }}
-        #[allow(unused_mut)]
-        let mut urlpath = "{{- $url }}".to_string();
-
-        {{- range $parameter := $operation.Parameters }}
-        {{- $argname := $parameter.Name | snakeCase }}
-        {{- if eq $parameter.In "path" }}
-        urlpath = urlpath.replace("{{- print "{" $parameter.Name "}"}}",{{" "}} {{- $argname }});
-        {{- end }}
-        {{- end }}
-
-        #[allow(unused_mut)]
-        let mut query_params = String::new();
-
-	{{- range $parameter := $operation.Parameters }}
-        {{- $argname := $parameter.Name | snakeCase }}
-	{{- if eq $parameter.In "query"}}
-	    {{- if eq $parameter.Type "integer" }}
-	if let Some(param) = {{ $argname }} {
-	    query_params.push_str(&format!("{{- $argname }}={}&", param));
-	}
-	    {{- else if eq $parameter.Type "string" }}
-	if let Some(param) = {{ $argname }} {
-	    query_params.push_str(&format!("{{- $argname }}={}&", param));
-	}
-	    {{- else if eq $parameter.Type "boolean" }}
-	if let Some(param) = {{ $argname }} {
-	    query_params.push_str(&format!("{{- $argname }}={:?}&", param));
-	}
-	    {{- else if eq $parameter.Type "array" }}
-	for elem in {{ $argname }}
-	{
-	    query_params.push_str(&format!("{{- $argname }}={:?}&", elem));
-	}
-	    {{- else }}
-	{{ $parameter }} // ERROR
-	    {{- end }}
-	{{- end }}
-	{{- end }}
-
-        let authentication = {{- if $operation.Security }}
-	{{- with (index $operation.Security 0) }}
-	    {{- range $key, $value := . }}
-		{{- if eq $key "BasicAuth" }}
-	Authentication::Basic {
-            username: basic_auth_username.to_owned(),
-            password: basic_auth_password.to_owned()
-        };
-		{{- else if eq $key "HttpKeyAuth" }}
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-		{{- end }}
-	    {{- end }}
-	{{- end }}
-	{{- else }}
-        Authentication::Bearer {
-            token: bearer_token.to_owned()
-        };
-	{{- end }}
-
-        {{- $hasBody := false }}
-        {{- range $parameter := $operation.Parameters }}
-        {{- if eq $parameter.In "body" }}
-        {{- $hasBody = true }}
-        let body_json = {{ $parameter.Name }}.to_string();
-        {{- end }}
-        {{- end }}
-        {{ if eq $hasBody false }}
-        let body_json = String::new();
-        {{- end }}
-
-        RestRequest {
-           authentication,
-           urlpath,
-           query_params,
-           body: body_json,
-           _marker: std::marker::PhantomData
-        }
-    }
-
+    urlpath = urlpath.replace("{{- print "{" $parameter.Name "}"}}",{{" "}} {{- $argname }});
     {{- end }}
     {{- end }}
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+{{- range $parameter := $operation.Parameters }}
+    {{- $argname := $parameter.Name | snakeCase }}
+{{- if eq $parameter.In "query"}}
+    {{- if eq $parameter.Type "integer" }}
+if let Some(param) = {{ $argname }} {
+    query_params.push_str(&format!("{{- $argname }}={}&", param));
 }
+    {{- else if eq $parameter.Type "string" }}
+if let Some(param) = {{ $argname }} {
+    query_params.push_str(&format!("{{- $argname }}={}&", param));
+}
+    {{- else if eq $parameter.Type "boolean" }}
+if let Some(param) = {{ $argname }} {
+    query_params.push_str(&format!("{{- $argname }}={:?}&", param));
+}
+    {{- else if eq $parameter.Type "array" }}
+for elem in {{ $argname }}
+{
+    query_params.push_str(&format!("{{- $argname }}={:?}&", elem));
+}
+    {{- else }}
+{{ $parameter }} // ERROR
+    {{- end }}
+{{- end }}
+{{- end }}
+
+    let authentication = {{- if $operation.Security }}
+{{- with (index $operation.Security 0) }}
+    {{- range $key, $value := . }}
+	{{- if eq $key "BasicAuth" }}
+Authentication::Basic {
+	username: basic_auth_username.to_owned(),
+	password: basic_auth_password.to_owned()
+    };
+	{{- else if eq $key "HttpKeyAuth" }}
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+	{{- end }}
+    {{- end }}
+{{- end }}
+{{- else }}
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+{{- end }}
+
+    {{- $hasBody := false }}
+    {{- range $parameter := $operation.Parameters }}
+    {{- if eq $parameter.In "body" }}
+    {{- $hasBody = true }}
+    let body_json = {{ $parameter.Name }}.to_string();
+    {{- end }}
+    {{- end }}
+    {{ if eq $hasBody false }}
+    let body_json = String::new();
+    {{- end }}
+
+    let method = Method::{{- $method | pascalCase }};
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+
+{{- end }}
+{{- end }}
 `
 
 func convertRefToClassName(input string) (className string) {
