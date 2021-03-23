@@ -1,5 +1,5 @@
 [package]
-name = "nakama-rust"
+name = "nakama-rs"
 version = "0.1.0"
 authors = ["Fedor Logachev <not.fl3@gmail.com>"]
 edition = "2018"
@@ -10,3 +10,4 @@ edition = "2018"
 ureq = "2.0"
 base64 = "0.13"
 nanoserde = "0.1"
+ws = "0.9"
