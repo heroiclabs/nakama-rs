@@ -38,7 +38,8 @@ pub mod rt_api {
     pub struct MatchData {
         pub match_id: String,
         pub presence: Presence,
-        pub data: String,
+        #[nserde(proxy = "Base64Encoder")]
+        pub data: Vec<u8>,
         pub op_code: String,
         pub reliable: bool,
     }
@@ -52,6 +53,17 @@ pub mod rt_api {
         pub self_user: Presence,
         #[nserde(default)]
         pub presences: Vec<Presence>,
+    }
+
+    #[derive(DeJson, Clone, Debug)]
+    #[nserde(transparent)]
+    struct Base64Encoder(String);
+    impl From<&Base64Encoder> for Vec<u8> {
+        fn from(base64: &Base64Encoder) -> Vec<u8> {
+            let mut buffer = Vec::<u8>::new();
+            base64::decode_config_buf(&base64.0, base64::STANDARD, &mut buffer).unwrap();
+            buffer
+        }
     }
 
     struct Client {
@@ -131,11 +143,14 @@ pub mod rt_api {
                 .unwrap();
         }
 
-        pub fn match_data_send(&self, match_id: &str, opcode: i32, data: &str) {
+        pub fn match_data_send(&self, match_id: &str, opcode: i32, data: &[u8]) {
+            let mut buf = String::new();
+            base64::encode_config_buf(data, base64::STANDARD, &mut buf);
+
             self.sender
                 .send(format!(
                     r#"{{"match_data_send":{{"match_id":"{}","op_code":"{}","data":"{}","presences":[]}}}}"#,
-                    match_id, opcode, data
+                    match_id, opcode, buf
                 ))
                 .unwrap();
         }
@@ -178,7 +193,7 @@ pub mod sync_client {
         .into_string()
         .unwrap();
 
-        nanoserde::DeJson::deserialize_json(&response).unwrap()
+        nanoserde::DeJson::deserialize_json(&dbg!(response)).unwrap()
     }
 
     #[test]
