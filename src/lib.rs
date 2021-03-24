@@ -193,7 +193,7 @@ pub mod sync_client {
         .into_string()
         .unwrap();
 
-        nanoserde::DeJson::deserialize_json(&dbg!(response)).unwrap()
+        nanoserde::DeJson::deserialize_json(&response).unwrap()
     }
 
     #[test]
@@ -217,5 +217,89 @@ pub mod sync_client {
         let nakama_socket =
             crate::rt_api::Socket::connect("ws://127.0.0.1", 7350, false, &response.token);
         nakama_socket.join_match("asd");
+    }
+}
+
+pub mod async_client {
+    use super::api;
+    use quad_net::http_request::{Method, Request, RequestBuilder};
+
+    pub struct AsyncRequest<T: nanoserde::DeJson> {
+        _marker: std::marker::PhantomData<T>,
+        request: Request,
+    }
+
+    impl<T: nanoserde::DeJson> AsyncRequest<T> {
+        pub fn try_recv(&mut self) -> Option<T> {
+            if let Some(response) = self.request.try_recv() {
+                return Some(nanoserde::DeJson::deserialize_json(&response.unwrap()).unwrap());
+            }
+
+            None
+        }
+    }
+
+    pub fn make_request<T: nanoserde::DeJson>(
+        server: &str,
+        port: u32,
+        request: api::RestRequest<T>,
+    ) -> AsyncRequest<T> {
+        let auth_header = match request.authentication {
+            api::Authentication::Basic { username, password } => {
+                format!(
+                    "Basic {}",
+                    base64::encode(&format!("{}:{}", username, password))
+                )
+            }
+            api::Authentication::Bearer { token } => {
+                format!("Bearer {}", token)
+            }
+        };
+        let method = match request.method {
+            api::Method::Post => Method::Post,
+            api::Method::Put => Method::Put,
+            api::Method::Get => Method::Get,
+            api::Method::Delete => Method::Delete,
+        };
+
+        let url = format!(
+            "{}:{}{}?{}",
+            server, port, request.urlpath, request.query_params
+        );
+
+        let request = RequestBuilder::new(&url)
+            .method(method)
+            .header("Authorization", &auth_header)
+            .body(&request.body)
+            .send();
+
+        AsyncRequest {
+            request,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    #[test]
+    fn auth_async() {
+        let request = api::authenticate_email(
+            "defaultkey",
+            "",
+            api::ApiAccountEmail {
+                email: "super3@heroes.com".to_string(),
+                password: "batsignal2".to_string(),
+                vars: std::collections::HashMap::new(),
+            },
+            Some(false),
+            None,
+        );
+
+        let mut async_request = make_request("http://127.0.0.1", 7350, request);
+        let response = loop {
+            if let Some(response) = async_request.try_recv() {
+                break response;
+            }
+        };
+
+        println!("{:?}", response);
     }
 }

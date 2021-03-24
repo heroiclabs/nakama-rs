@@ -11,3 +11,5 @@ ureq = "2.0"
 base64 = "0.13"
 nanoserde = "0.1"
 ws = "0.9"
+
+quad-net = { git = "https://github.com/not-fl3/quad-net.git" }
