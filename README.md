@@ -1,0 +1,31 @@
+<a href="https://crates.io/crates/nakama-rs">
+    <img src="https://img.shields.io/crates/v/nakama-rs.svg" alt="Nakama-rs" />
+</a>
+
+Simple Bindings to the Nakama library!
+
+Read the [documentation](https://docs.rs/nakama-rs).
+
+# Why would you use this library?
+
+* Easy access to Nakama's API.
+* Usable with the async/future library of your choice.
+* Minimal dependencies.
+* Safe: no `unsafe` calls!
+
+# Usage
+Add the following to you Cargo.toml file:
+```
+nakama-rs = "*"
+```
+
+Use it like so:
+```rust
+use nakama_rs::*;
+fn main() {
+    <TODO>
+}
+```
+
+For more examples, see the documentation and examples.
+
