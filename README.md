@@ -23,7 +23,9 @@ Use it like so:
 ```rust
 use nakama_rs::*;
 fn main() {
-    <TODO>
+    let mut client = ApiClient::new("defaultkey", "127.0.0.1", 7350, "http");
+    client.authenticate("email@email.com", "password");
+    client.tick();
 }
 ```
 
