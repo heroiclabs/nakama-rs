@@ -1,15 +1,19 @@
 mod api_gen;
 
+pub mod api_client;
+
+pub mod async_client;
+
 pub mod api {
     pub use super::api_gen::*;
 }
 
 pub mod rt_api {
     use nanoserde::DeJson;
-    use std::sync::mpsc::{self, channel};
+    use quad_net::web_socket::WebSocket;
 
-    #[derive(DeJson, Debug)]
-    pub struct EventContainer {
+    #[derive(DeJson, Debug, Clone)]
+    pub struct SocketEvent {
         /// Request/response ID.
         /// Request CID will match response CID.
         /// If event was not a response cid will be None.
@@ -18,6 +22,7 @@ pub mod rt_api {
         pub match_data: Option<MatchData>,
         #[nserde(rename = "match")]
         pub new_match: Option<Match>,
+        pub matchmaker_matched: Option<MatchmakerMatched>,
     }
 
     #[derive(DeJson, Debug, Clone)]
@@ -32,27 +37,39 @@ pub mod rt_api {
         pub match_id: String,
         #[nserde(default)]
         pub joins: Vec<Presence>,
+        #[nserde(default)]
+        pub leaves: Vec<Presence>,
     }
 
     #[derive(DeJson, Debug, Clone)]
     pub struct MatchData {
         pub match_id: String,
         pub presence: Presence,
+        #[nserde(default)]
         #[nserde(proxy = "Base64Encoder")]
         pub data: Vec<u8>,
         pub op_code: String,
+        #[nserde(default)]
         pub reliable: bool,
     }
 
     #[derive(DeJson, Debug, Clone)]
     pub struct Match {
         pub match_id: String,
+        #[nserde(default)]
         pub authoritative: bool,
+        #[nserde(default)]
         pub label: String,
         #[nserde(rename = "self")]
         pub self_user: Presence,
         #[nserde(default)]
         pub presences: Vec<Presence>,
+    }
+
+    #[derive(DeJson, Debug, Clone)]
+    pub struct MatchmakerMatched {
+        pub ticket: String,
+        pub token: String,
     }
 
     #[derive(DeJson, Clone, Debug)]
@@ -66,43 +83,9 @@ pub mod rt_api {
         }
     }
 
-    struct Client {
-        out: ws::Sender,
-        thread_out: mpsc::Sender<Event>,
-    }
-
-    enum Event {
-        Connect(ws::Sender),
-        Message(String),
-    }
-
     pub struct Socket {
-        sender: ws::Sender,
-        rx: mpsc::Receiver<Event>,
-    }
-
-    impl ws::Handler for Client {
-        fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
-            self.thread_out
-                .send(Event::Connect(self.out.clone()))
-                .unwrap();
-            Ok(())
-        }
-
-        fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
-            self.thread_out
-                .send(Event::Message(msg.into_text().unwrap()))
-                .unwrap();
-            Ok(())
-        }
-
-        fn on_close(&mut self, code: ws::CloseCode, _reason: &str) {
-            println!("closed {:?}", code);
-        }
-
-        fn on_error(&mut self, error: ws::Error) {
-            println!("{:?}", error);
-        }
+        web_socket: WebSocket,
+        cid: u32,
     }
 
     impl Socket {
@@ -112,194 +95,90 @@ pub mod rt_api {
                 addr, port, appear_online, token
             );
 
-            let (tx, rx) = channel();
-            std::thread::spawn(move || {
-                ws::connect(ws_addr, |out| Client {
-                    out,
-                    thread_out: tx.clone(),
-                })
-                .unwrap()
-            });
-
-            match rx.recv() {
-                Ok(Event::Connect(sender)) => Socket { sender, rx },
-                _ => panic!("Failed to connect websocket"),
+            Socket {
+                web_socket: WebSocket::connect(&ws_addr).unwrap(),
+                cid: 1,
             }
+        }
+
+        pub fn connected(&self) -> bool {
+            self.web_socket.connected()
         }
 
         pub fn try_recv(&mut self) -> Option<String> {
-            self.rx.try_recv().ok().map(|event| match event {
-                Event::Message(msg) => msg,
-                _ => panic!(),
-            })
+            self.web_socket
+                .try_recv()
+                .map(|bytes| String::from_utf8(bytes).unwrap())
         }
 
-        pub fn join_match(&self, match_id: &str) {
-            self.sender
-                .send(format!(
-                    r#"{{"match_join":{{"match_id":"{}"}},"cid":"1"}}"#,
-                    match_id
-                ))
-                .unwrap();
+        pub fn join_match_by_id(&mut self, match_id: &str) -> u32 {
+            let id = self.cid;
+            self.web_socket.send_text(&format!(
+                r#"{{"match_join":{{"match_id":"{}"}},"cid":"{}"}}"#,
+                match_id, id
+            ));
+
+            self.cid += 1;
+            id
         }
 
-        pub fn match_data_send(&self, match_id: &str, opcode: i32, data: &[u8]) {
+        pub fn join_match_by_token(&mut self, token: &str) -> u32 {
+            let id = self.cid;
+            self.web_socket.send_text(&format!(
+                r#"{{"match_join":{{"token":"{}"}},"cid":"{}"}}"#,
+                token, id
+            ));
+
+            self.cid += 1;
+            id
+        }
+
+        pub fn leave_match(&mut self, match_id: &str) -> u32 {
+            let id = self.cid;
+            self.web_socket.send_text(&format!(
+                r#"{{"match_leave":{{"match_id":"{}"}},"cid":"{}"}}"#,
+                match_id, id
+            ));
+            self.cid += 1;
+            id
+        }
+
+        pub fn match_data_send(&mut self, match_id: &str, opcode: i32, data: &[u8]) {
             let mut buf = String::new();
             base64::encode_config_buf(data, base64::STANDARD, &mut buf);
 
-            self.sender
-                .send(format!(
+            self.web_socket
+                .send_text(&format!(
                     r#"{{"match_data_send":{{"match_id":"{}","op_code":"{}","data":"{}","presences":[]}}}}"#,
                     match_id, opcode, buf
-                ))
-                .unwrap();
+                ));
         }
-    }
-}
 
-pub mod sync_client {
-    use super::api;
+        /// usage example: `add_matchmaker(2, 4, "+properties.engine:\\\"macroquad_matchmaking\\\"", "{\"engine\":\"macroquad_matchmaking\"}");`
+        pub fn add_matchmaker(
+            &mut self,
+            min_count: u32,
+            max_count: u32,
+            query: &str,
+            string_properties: &str,
+        ) -> u32 {
+            let id = self.cid;
+            let request = format!(
+                r#"{{"matchmaker_add":{{"min_count":{},"max_count":{},"query":"{}","string_properties":{}}},"cid":"{}"}}"#,
+                min_count, max_count, query, string_properties, id
+            );
 
-    pub fn make_request<T: nanoserde::DeJson>(
-        server: &str,
-        port: u32,
-        request: api::RestRequest<T>,
-    ) -> T {
-        let auth_header = match request.authentication {
-            api::Authentication::Basic { username, password } => {
-                format!(
-                    "Basic {}",
-                    base64::encode(&format!("{}:{}", username, password))
-                )
-            }
-            api::Authentication::Bearer { token } => {
-                format!("Bearer {}", token)
-            }
-        };
-        let method = match request.method {
-            api::Method::Post => ureq::post,
-            api::Method::Put => ureq::put,
-            api::Method::Get => ureq::get,
-            api::Method::Delete => ureq::delete,
-        };
-
-        let response: String = method(&format!(
-            "{}:{}{}?{}",
-            server, port, request.urlpath, request.query_params
-        ))
-        .set("Authorization", &auth_header)
-        .send_string(&request.body)
-        .unwrap()
-        .into_string()
-        .unwrap();
-
-        nanoserde::DeJson::deserialize_json(&response).unwrap()
-    }
-
-    #[test]
-    fn auth() {
-        let request = api::authenticate_email(
-            "defaultkey",
-            "",
-            api::ApiAccountEmail {
-                email: "super3@heroes.com".to_string(),
-                password: "batsignal2".to_string(),
-                vars: std::collections::HashMap::new(),
-            },
-            Some(false),
-            None,
-        );
-
-        let response = make_request("http://127.0.0.1", 7350, request);
-        println!("{:?}", response);
-
-        println!("connecting socket");
-        let nakama_socket =
-            crate::rt_api::Socket::connect("ws://127.0.0.1", 7350, false, &response.token);
-        nakama_socket.join_match("asd");
-    }
-}
-
-pub mod async_client {
-    use super::api;
-    use quad_net::http_request::{Method, Request, RequestBuilder};
-
-    pub struct AsyncRequest<T: nanoserde::DeJson> {
-        _marker: std::marker::PhantomData<T>,
-        request: Request,
-    }
-
-    impl<T: nanoserde::DeJson> AsyncRequest<T> {
-        pub fn try_recv(&mut self) -> Option<T> {
-            if let Some(response) = self.request.try_recv() {
-                return Some(nanoserde::DeJson::deserialize_json(&response.unwrap()).unwrap());
-            }
-
-            None
+            self.web_socket.send_text(&request);
+            self.cid += 1;
+            id
         }
-    }
 
-    pub fn make_request<T: nanoserde::DeJson>(
-        server: &str,
-        port: u32,
-        request: api::RestRequest<T>,
-    ) -> AsyncRequest<T> {
-        let auth_header = match request.authentication {
-            api::Authentication::Basic { username, password } => {
-                format!(
-                    "Basic {}",
-                    base64::encode(&format!("{}:{}", username, password))
-                )
-            }
-            api::Authentication::Bearer { token } => {
-                format!("Bearer {}", token)
-            }
-        };
-        let method = match request.method {
-            api::Method::Post => Method::Post,
-            api::Method::Put => Method::Put,
-            api::Method::Get => Method::Get,
-            api::Method::Delete => Method::Delete,
-        };
-
-        let url = format!(
-            "{}:{}{}?{}",
-            server, port, request.urlpath, request.query_params
-        );
-
-        let request = RequestBuilder::new(&url)
-            .method(method)
-            .header("Authorization", &auth_header)
-            .body(&request.body)
-            .send();
-
-        AsyncRequest {
-            request,
-            _marker: std::marker::PhantomData,
+        pub fn create_match(&mut self) -> u32 {
+            let id = self.cid;
+            let request = format!(r#"{{"match_create":{{}},"cid":"{}"}}"#, id);
+            self.web_socket.send_text(&request);
+            self.cid += 1;
+            id
         }
-    }
-
-    #[test]
-    fn auth_async() {
-        let request = api::authenticate_email(
-            "defaultkey",
-            "",
-            api::ApiAccountEmail {
-                email: "super3@heroes.com".to_string(),
-                password: "batsignal2".to_string(),
-                vars: std::collections::HashMap::new(),
-            },
-            Some(false),
-            None,
-        );
-
-        let mut async_request = make_request("http://127.0.0.1", 7350, request);
-        let response = loop {
-            if let Some(response) = async_request.try_recv() {
-                break response;
-            }
-        };
-
-        println!("{:?}", response);
     }
 }
