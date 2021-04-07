@@ -3,6 +3,8 @@ name = "nakama-rs"
 version = "0.1.0"
 authors = ["Fedor Logachev <not.fl3@gmail.com>"]
 edition = "2018"
+license = "MIT/Apache-2.0"
+description = "Pure rust nakama protocol implementation"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,4 +12,4 @@ edition = "2018"
 base64 = "0.13"
 nanoserde = "0.1"
 
-quad-net = { git = "https://github.com/not-fl3/quad-net.git" }
+quad-net = "0.1.1"
