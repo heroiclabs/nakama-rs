@@ -29,5 +29,7 @@ fn main() {
 }
 ```
 
-For more examples, see the documentation and examples.
+For more examples, see the documentation and examples. To run the examples, you need a local Nakama instance running.
+The easiest way is to run `docker-compose up` in the `examples/` folder.
+For information on how to set up docker for usage with Nakama, see [Docker quickstart](https://heroiclabs.com/docs/install-docker-quickstart/).
 
