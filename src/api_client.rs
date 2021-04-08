@@ -1,7 +1,10 @@
 //! Stateful nakama client, abstracting over nakama api and rt_api.
 
 use crate::{
-    api::{self, RestRequest},
+    api::{
+        self, ApiLeaderboardRecordList, RestRequest,
+        WriteLeaderboardRecordRequestLeaderboardRecordWrite,
+    },
     async_client::AsyncRequestTick,
     rt_api::{Presence, Socket, SocketEvent},
 };
@@ -30,6 +33,8 @@ pub struct NakamaState {
     pub username: Option<String>,
     pub token: Option<String>,
     pub refresh_token: Option<String>,
+    /// Stores the last received leaderboard record list for each leaderboard
+    pub leaderboards: HashMap<String, Rc<ApiLeaderboardRecordList>>,
     pub match_id: Option<String>,
     pub rpc_response: Option<String>,
     pub error: Option<String>,
@@ -92,6 +97,7 @@ impl ApiClient {
                 socket: None,
                 token: None,
                 refresh_token: None,
+                leaderboards: HashMap::new(),
                 rpc_response: None,
                 error: None,
                 username: None,
@@ -232,6 +238,59 @@ impl ApiClient {
         self.state.borrow().username.is_some()
             && self.state.borrow().socket.is_some()
             && self.state.borrow().socket.as_ref().unwrap().connected()
+    }
+
+    pub fn write_leaderboard_record(&mut self, leaderboard_id: &str, score: i32) {
+        assert!(self.state.borrow().token.is_some());
+        let request = api::write_leaderboard_record(
+            &self.state.borrow().token.as_ref().unwrap(),
+            leaderboard_id,
+            WriteLeaderboardRecordRequestLeaderboardRecordWrite {
+                metadata: "".to_owned(),
+                subscore: "0".to_owned(),
+                score: score.to_string(),
+            },
+        );
+
+        self.state
+            .borrow_mut()
+            .make_request(request, |_response| {})
+    }
+
+    pub fn list_leaderboard_records(&mut self, leaderboard_id: &str) {
+        assert!(self.state.borrow().token.is_some());
+
+        let request = api::list_leaderboard_records(
+            &self.state.borrow().token.as_ref().unwrap(),
+            leaderboard_id,
+            &[],
+            // If there is no limit, only one entry is returned
+            Some(100),
+            None,
+            None,
+        );
+
+        let id = leaderboard_id.to_owned();
+        self.state.borrow_mut().make_request(request, {
+            let state2 = self.state.clone();
+            move |response| {
+                state2
+                    .borrow_mut()
+                    .leaderboards
+                    .insert(id.clone(), Rc::new(response));
+            }
+        })
+    }
+
+    pub fn leaderboard_records(
+        &self,
+        leaderboard_id: &str,
+    ) -> Option<Rc<ApiLeaderboardRecordList>> {
+        self.state
+            .borrow()
+            .leaderboards
+            .get(leaderboard_id)
+            .map(|records| records.clone())
     }
 
     pub fn try_recv(&mut self) -> Option<Event> {
