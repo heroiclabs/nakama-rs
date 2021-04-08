@@ -120,6 +120,8 @@ pub fn make_request<T: nanoserde::DeJson>(
 
 #[test]
 fn auth_async() {
+    use crate::config::DEFAULT_PORT;
+
     let request = api::authenticate_email(
         "defaultkey",
         "",
@@ -132,7 +134,7 @@ fn auth_async() {
         None,
     );
 
-    let mut async_request = make_request("http://127.0.0.1", 7350, request);
+    let mut async_request = make_request("http://127.0.0.1", DEFAULT_PORT, request);
     let response = loop {
         if let Some(response) = async_request.try_recv() {
             break response;
