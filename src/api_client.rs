@@ -107,7 +107,7 @@ impl ApiClient {
     }
 
     pub fn in_progress(&self) -> bool {
-        self.ongoing_request.is_some()
+        self.ongoing_request.is_some() || self.state.borrow().next_request.is_some()
     }
 
     pub fn authenticate(&mut self, email: &str, password: &str) {
