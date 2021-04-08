@@ -6,11 +6,8 @@ fn main() {
     // Note that the minimum password length is 8 characters!
     client.register("some@user.com", "password", "Username");
 
-    loop {
-        client.tick();
-        if !client.in_progress() {
-            break
-        }
+    while client.in_progress() {
+        client.tick()
     }
 
     println!("Username: {:?}", client.username());
