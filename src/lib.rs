@@ -5,6 +5,7 @@ pub mod config;
 pub mod api_client;
 
 pub mod async_client;
+pub mod matchmaker;
 
 pub mod api {
     pub use super::api_gen::*;
@@ -163,11 +164,12 @@ pub mod rt_api {
             max_count: u32,
             query: &str,
             string_properties: &str,
+            numeric_properties: &str,
         ) -> u32 {
             let id = self.cid;
             let request = format!(
-                r#"{{"matchmaker_add":{{"min_count":{},"max_count":{},"query":"{}","string_properties":{}}},"cid":"{}"}}"#,
-                min_count, max_count, query, string_properties, id
+                r#"{{"matchmaker_add":{{"min_count":{},"max_count":{},"query":"{}","string_properties":{}, "numeric_properties":{}}},"cid":"{}"}}"#,
+                min_count, max_count, query, string_properties, numeric_properties, id
             );
 
             self.web_socket.send_text(&request);
