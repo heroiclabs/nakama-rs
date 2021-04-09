@@ -11,6 +11,7 @@ use crate::{
 
 use nanoserde::DeJson;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use crate::matchmaker::Matchmaker;
 
 pub enum Event {
     Presence {
@@ -362,10 +363,7 @@ impl ApiClient {
 
     pub fn socket_add_matchmaker(
         &mut self,
-        min_count: u32,
-        max_count: u32,
-        query: &str,
-        string_properties: &str,
+        matchmaker: &Matchmaker,
     ) {
         let mut state = &mut *self.state.borrow_mut();
 
@@ -373,10 +371,11 @@ impl ApiClient {
         state.match_id = None;
 
         state.socket.as_mut().unwrap().add_matchmaker(
-            min_count,
-            max_count,
-            query,
-            string_properties,
+            matchmaker.min_count,
+            matchmaker.max_count,
+            matchmaker.query.as_str(),
+            matchmaker.string_properties().as_str(),
+            matchmaker.numeric_properties().as_str(),
         );
     }
 
