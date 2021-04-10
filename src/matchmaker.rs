@@ -10,7 +10,6 @@ enum RangeOperator {
 
 enum QueryType {
     Term(String),
-    Phrase(String),
     Range { value: i32, operator: RangeOperator },
 }
 
@@ -40,11 +39,6 @@ pub struct QueryItemBuilder<'a> {
 impl<'a> QueryItemBuilder<'a> {
     pub fn term(&mut self, term: &str) -> &mut Self {
         self.query_type = Some(QueryType::Term(term.to_owned()));
-        self
-    }
-
-    pub fn phrase(&mut self, phrase: &str) -> &mut Self {
-        self.query_type = Some(QueryType::Phrase(phrase.to_owned()));
         self
     }
 
@@ -125,10 +119,6 @@ impl<'a> QueryItemBuilder<'a> {
                 .matchmaker
                 .query
                 .push_str(format!("{}{}{}{}", boolean, field, term, boost).as_str()),
-            QueryType::Phrase(phrase) => self
-                .matchmaker
-                .query
-                .push_str(format!("{}{}\"{}\"{}", boolean, field, phrase, boost).as_str()),
             QueryType::Range { operator, value } => {
                 let op = match operator {
                     RangeOperator::GT => ">",
@@ -147,10 +137,10 @@ impl<'a> QueryItemBuilder<'a> {
 }
 
 impl<'a> Matchmaker {
-    pub fn new(min_count: u32, max_count: u32) -> Self {
+    pub fn new() -> Self {
         Matchmaker {
-            min_count,
-            max_count,
+            min_count: 2,
+            max_count: 100,
             string_properties: HashMap::new(),
             numeric_properties: HashMap::new(),
             query: "".to_owned(),
@@ -159,24 +149,50 @@ impl<'a> Matchmaker {
 
     pub fn string_properties(&self) -> String {
         let mut str = "{".to_owned();
-        for property in &self.string_properties {
-           str += format!("\"{}\": \"{}\"", property.0, property.1).as_str();
-        }
+
+        let mut properties = self.string_properties.iter().map(|property| {
+            format!("\"{}\": \"{}\"", property.0, property.1)
+        }).collect::<Vec<String>>();
+
+        // The tests need to have a deterministic order
+        #[cfg(test)]
+        properties.sort();
+
+        str += &properties.join(",");
+
         str += "}";
         str
     }
 
     pub fn numeric_properties(&self) -> String {
         let mut str = "{".to_owned();
-        for property in &self.numeric_properties {
-            str += format!("\"{}\": \"{}\"", property.0, property.1).as_str();
-        }
+
+        let mut properties = self.numeric_properties.iter().map(|property| {
+            format!("\"{}\": {}", property.0, property.1)
+        }).collect::<Vec<String>>();
+
+        // The tests need to have a deterministic order
+        #[cfg(test)]
+        properties.sort();
+
+        str += &properties.join(",");
+
         str += "}";
         str
     }
 
     pub fn property_exists(&self, name: &str) -> bool {
         self.string_properties.contains_key(name) || self.numeric_properties.contains_key(name)
+    }
+
+    pub fn min(&mut self, min: u32) -> &mut Self {
+        self.min_count = min;
+        self
+    }
+
+    pub fn max(&mut self, max: u32) -> &mut Self {
+        self.max_count = max;
+        self
     }
 
     pub fn add_string_property(&mut self, name: &str, value: &str) -> &mut Self {
@@ -212,8 +228,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn properties_formatting() {
+        let mut matchmaker = Matchmaker::new();
+        matchmaker.add_string_property("region", "Europe")
+            .add_string_property("host", "Windows")
+            .add_numeric_property("rank", 5.5)
+            .add_numeric_property("elo", 1000.0);
+
+        assert_eq!(matchmaker.string_properties(), "{\"host\": \"Windows\",\"region\": \"Europe\"}");
+        assert_eq!(matchmaker.numeric_properties(), "{\"elo\": 1000,\"rank\": 5.5}");
+    }
+
+    #[test]
     fn term() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
             .add_query_item("region")
@@ -224,20 +252,8 @@ mod tests {
     }
 
     #[test]
-    fn phrase() {
-        let mut matchmaker = Matchmaker::new(2, 4);
-        matchmaker
-            .add_string_property("region", "Europe")
-            .add_query_item("region")
-            .phrase("europe")
-            .build();
-
-        assert_eq!(matchmaker.query, "properties.region:\"europe\"");
-    }
-
-    #[test]
     fn range_lt() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
             .add_query_item("rank")
@@ -249,7 +265,7 @@ mod tests {
 
     #[test]
     fn range_leq() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
             .add_query_item("rank")
@@ -261,7 +277,7 @@ mod tests {
 
     #[test]
     fn range_gt() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
             .add_query_item("rank")
@@ -273,7 +289,7 @@ mod tests {
 
     #[test]
     fn range_geq() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
             .add_query_item("rank")
@@ -285,7 +301,7 @@ mod tests {
 
     #[test]
     fn boost() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
             .add_query_item("rank")
@@ -298,7 +314,7 @@ mod tests {
 
     #[test]
     fn required() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
             .add_query_item("region")
@@ -311,7 +327,7 @@ mod tests {
 
     #[test]
     fn excluded() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
             .add_query_item("region")
@@ -324,7 +340,7 @@ mod tests {
 
     #[test]
     fn multiple_terms() {
-        let mut matchmaker = Matchmaker::new(2, 4);
+        let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
             .add_string_property("country", "Germany")
