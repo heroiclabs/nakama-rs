@@ -1,7 +1,5 @@
 use nakama_rs::{api_client::ApiClient, config};
-use nakama_rs::matchmaker::Matchmaker;
-use std::thread::sleep;
-use std::time::Duration;
+use nakama_rs::matchmaker::{Matchmaker, QueryItemBuilder};
 
 fn tick_clients(clients: &mut Vec<ApiClient>) {
     while clients.iter().any(|client| client.in_progress()) {
@@ -34,29 +32,29 @@ fn match_rank_range() {
     let mut matchmaker = Matchmaker::new();
     matchmaker
         .add_numeric_property("rank", 5.0)
-        .add_query_item("rank").geq(3).required().build()
-        .add_query_item("rank").leq(7).required().build();
+        .add_query_item(&QueryItemBuilder::new("rank").geq(3).required().build())
+        .add_query_item(&QueryItemBuilder::new("rank").leq(7).required().build());
 
     println!("Client 2 with rank 4 searching for a match with rank between 2 and 6");
     let mut matchmaker2 = Matchmaker::new();
     matchmaker2
         .add_numeric_property("rank", 4.0)
-        .add_query_item("rank").geq(2).required().build()
-        .add_query_item("rank").leq(6).required().build();
+        .add_query_item(&QueryItemBuilder::new("rank").geq(2).required().build())
+        .add_query_item(&QueryItemBuilder::new("rank").leq(6).required().build());
 
     println!("Client 3 with rank 10 searching for a match with rank between 8 and 12");
     let mut matchmaker3 = Matchmaker::new();
     matchmaker3
         .add_numeric_property("rank", 10.0)
-        .add_query_item("rank").geq(8).required().build()
-        .add_query_item("rank").leq(12).required().build();
+        .add_query_item(&QueryItemBuilder::new("rank").geq(8).required().build())
+        .add_query_item(&QueryItemBuilder::new("rank").leq(12).required().build());
 
     println!("Client 4 with rank 9 searching for a match with rank between 7 and 11");
     let mut matchmaker4 = Matchmaker::new();
     matchmaker4
         .add_numeric_property("rank", 9.0)
-        .add_query_item("rank").geq(7).required().build()
-        .add_query_item("rank").leq(11).required().build();
+        .add_query_item(&QueryItemBuilder::new("rank").geq(7).required().build())
+        .add_query_item(&QueryItemBuilder::new("rank").leq(11).required().build());
 
     clients[0].socket_add_matchmaker(&matchmaker);
     clients[1].socket_add_matchmaker(&matchmaker2);
@@ -90,7 +88,7 @@ fn match_region() {
     let mut matchmaker = Matchmaker::new();
     matchmaker
         .add_string_property("region", "Europe")
-        .add_query_item("region").term("Europe").required().build();
+        .add_query_item(&QueryItemBuilder::new("region").term("Europe").required().build());
 
     client.socket_add_matchmaker(&matchmaker);
     client2.socket_add_matchmaker(&matchmaker);
