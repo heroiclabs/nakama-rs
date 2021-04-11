@@ -28,15 +28,22 @@ pub struct Matchmaker {
     pub query: String,
 }
 
-pub struct QueryItemBuilder<'a> {
-    matchmaker: &'a mut Matchmaker,
-    property: &'a str,
+pub struct QueryItemBuilder {
+    property: String,
     query_type: Option<QueryType>,
     boolean: Boolean,
     boost: i64,
 }
 
-impl<'a> QueryItemBuilder<'a> {
+impl QueryItemBuilder {
+    pub fn new(property: &str) -> QueryItemBuilder {
+        QueryItemBuilder {
+            property: property.to_owned(),
+            query_type: None,
+            boolean: Boolean::Optional,
+            boost: 0,
+        }
+    }
     pub fn term(&mut self, term: &str) -> &mut Self {
         self.query_type = Some(QueryType::Term(term.to_owned()));
         self
@@ -89,7 +96,7 @@ impl<'a> QueryItemBuilder<'a> {
         self
     }
 
-    pub fn build(&'a mut self) -> &'a mut Matchmaker {
+    pub fn build(&mut self) -> String {
         assert!(self.query_type.is_some());
 
         let boolean = if self.boolean == Boolean::Required {
@@ -110,15 +117,8 @@ impl<'a> QueryItemBuilder<'a> {
 
         let ref query_type = self.query_type.as_ref().unwrap();
 
-        if self.matchmaker.query.len() != 0 {
-            self.matchmaker.query.push(' ')
-        }
-
         match query_type {
-            QueryType::Term(term) => self
-                .matchmaker
-                .query
-                .push_str(format!("{}{}{}{}", boolean, field, term, boost).as_str()),
+            QueryType::Term(term) => format!("{}{}{}{}", boolean, field, term, boost),
             QueryType::Range { operator, value } => {
                 let op = match operator {
                     RangeOperator::GT => ">",
@@ -126,13 +126,9 @@ impl<'a> QueryItemBuilder<'a> {
                     RangeOperator::GEQ => ">=",
                     RangeOperator::LEQ => "<=",
                 };
-                self.matchmaker
-                    .query
-                    .push_str(format!("{}{}{}{}{}", boolean, field, op, value, boost).as_str())
+                format!("{}{}{}{}{}", boolean, field, op, value, boost)
             }
         }
-
-        self.matchmaker
     }
 }
 
@@ -150,9 +146,11 @@ impl<'a> Matchmaker {
     pub fn string_properties(&self) -> String {
         let mut str = "{".to_owned();
 
-        let mut properties = self.string_properties.iter().map(|property| {
-            format!("\"{}\": \"{}\"", property.0, property.1)
-        }).collect::<Vec<String>>();
+        let mut properties = self
+            .string_properties
+            .iter()
+            .map(|property| format!("\"{}\": \"{}\"", property.0, property.1))
+            .collect::<Vec<String>>();
 
         // The tests need to have a deterministic order
         #[cfg(test)]
@@ -167,9 +165,11 @@ impl<'a> Matchmaker {
     pub fn numeric_properties(&self) -> String {
         let mut str = "{".to_owned();
 
-        let mut properties = self.numeric_properties.iter().map(|property| {
-            format!("\"{}\": {}", property.0, property.1)
-        }).collect::<Vec<String>>();
+        let mut properties = self
+            .numeric_properties
+            .iter()
+            .map(|property| format!("\"{}\": {}", property.0, property.1))
+            .collect::<Vec<String>>();
 
         // The tests need to have a deterministic order
         #[cfg(test)]
@@ -212,14 +212,14 @@ impl<'a> Matchmaker {
         self
     }
 
-    pub fn add_query_item(&'a mut self, property: &'a str) -> QueryItemBuilder<'a> {
-        QueryItemBuilder {
-            matchmaker: self,
-            property,
-            boolean: Boolean::Optional,
-            query_type: None,
-            boost: 0,
+    pub fn add_query_item(&mut self, query: &str) -> &mut Self {
+        if self.query.len() != 0 {
+            self.query.push(' ')
         }
+
+        self.query.push_str(query);
+
+        self
     }
 }
 
@@ -230,13 +230,20 @@ mod tests {
     #[test]
     fn properties_formatting() {
         let mut matchmaker = Matchmaker::new();
-        matchmaker.add_string_property("region", "Europe")
+        matchmaker
+            .add_string_property("region", "Europe")
             .add_string_property("host", "Windows")
             .add_numeric_property("rank", 5.5)
             .add_numeric_property("elo", 1000.0);
 
-        assert_eq!(matchmaker.string_properties(), "{\"host\": \"Windows\",\"region\": \"Europe\"}");
-        assert_eq!(matchmaker.numeric_properties(), "{\"elo\": 1000,\"rank\": 5.5}");
+        assert_eq!(
+            matchmaker.string_properties(),
+            "{\"host\": \"Windows\",\"region\": \"Europe\"}"
+        );
+        assert_eq!(
+            matchmaker.numeric_properties(),
+            "{\"elo\": 1000,\"rank\": 5.5}"
+        );
     }
 
     #[test]
@@ -244,9 +251,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
-            .add_query_item("region")
-            .term("europe")
-            .build();
+            .add_query_item(&QueryItemBuilder::new("region").term("europe").build());
 
         assert_eq!(matchmaker.query, "properties.region:europe");
     }
@@ -256,9 +261,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
-            .add_query_item("rank")
-            .lt(2)
-            .build();
+            .add_query_item(&QueryItemBuilder::new("rank").lt(2).build());
 
         assert_eq!(matchmaker.query, "properties.rank:<2");
     }
@@ -268,9 +271,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
-            .add_query_item("rank")
-            .leq(2)
-            .build();
+            .add_query_item(&QueryItemBuilder::new("rank").leq(2).build());
 
         assert_eq!(matchmaker.query, "properties.rank:<=2");
     }
@@ -280,9 +281,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
-            .add_query_item("rank")
-            .gt(2)
-            .build();
+            .add_query_item(&QueryItemBuilder::new("rank").gt(2).build());
 
         assert_eq!(matchmaker.query, "properties.rank:>2");
     }
@@ -292,9 +291,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
-            .add_query_item("rank")
-            .geq(2)
-            .build();
+            .add_query_item(&QueryItemBuilder::new("rank").geq(2).build());
 
         assert_eq!(matchmaker.query, "properties.rank:>=2");
     }
@@ -304,10 +301,7 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_numeric_property("rank", 5.0)
-            .add_query_item("rank")
-            .geq(2)
-            .boost(5)
-            .build();
+            .add_query_item(&QueryItemBuilder::new("rank").geq(2).boost(5).build());
 
         assert_eq!(matchmaker.query, "properties.rank:>=2^5");
     }
@@ -317,10 +311,12 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
-            .add_query_item("region")
-            .term("europe")
-            .required()
-            .build();
+            .add_query_item(
+                &QueryItemBuilder::new("region")
+                    .term("europe")
+                    .required()
+                    .build(),
+            );
 
         assert_eq!(matchmaker.query, "+properties.region:europe");
     }
@@ -330,10 +326,12 @@ mod tests {
         let mut matchmaker = Matchmaker::new();
         matchmaker
             .add_string_property("region", "Europe")
-            .add_query_item("region")
-            .term("europe")
-            .excluded()
-            .build();
+            .add_query_item(
+                &QueryItemBuilder::new("region")
+                    .term("europe")
+                    .excluded()
+                    .build(),
+            );
 
         assert_eq!(matchmaker.query, "-properties.region:europe");
     }
@@ -344,15 +342,22 @@ mod tests {
         matchmaker
             .add_string_property("region", "Europe")
             .add_string_property("country", "Germany")
-            .add_query_item("region")
-            .term("europe")
-            .required()
-            .build()
-            .add_query_item("country")
-            .term("Germany")
-            .excluded()
-            .build();
+            .add_query_item(
+                &QueryItemBuilder::new("region")
+                    .term("europe")
+                    .required()
+                    .build(),
+            )
+            .add_query_item(
+                &QueryItemBuilder::new("country")
+                    .term("Germany")
+                    .excluded()
+                    .build(),
+            );
 
-        assert_eq!(matchmaker.query, "+properties.region:europe -properties.country:Germany");
+        assert_eq!(
+            matchmaker.query,
+            "+properties.region:europe -properties.country:Germany"
+        );
     }
 }
