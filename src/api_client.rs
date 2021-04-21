@@ -12,6 +12,7 @@ use crate::{
 use nanoserde::DeJson;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::matchmaker::Matchmaker;
+use crate::api::{ApiWriteStorageObjectsRequest, ApiStorageObject, ApiWriteStorageObject, ApiStorageObjectAck};
 
 pub enum Event {
     Presence {
@@ -36,6 +37,10 @@ pub struct NakamaState {
     pub refresh_token: Option<String>,
     /// Stores the last received leaderboard record list for each leaderboard
     pub leaderboards: HashMap<String, Rc<ApiLeaderboardRecordList>>,
+    /// Objects that have been written.
+    pub collections: HashMap<String, HashMap<String, Rc<ApiStorageObject>>>,
+    /// Objects that are being written
+    pub pending_objects: HashMap<String, HashMap<String, ApiWriteStorageObject>>,
     pub match_id: Option<String>,
     pub rpc_response: Option<String>,
     pub error: Option<String>,
@@ -61,6 +66,9 @@ impl NakamaState {
 
         let mut request = crate::async_client::make_request(&self.server_url, self.port, request);
         request.on_success(on_success);
+        request.on_error(|err| {
+            println!("Error: {:?}", err);
+        });
         self.next_request = Some(Box::new(request));
     }
 }
@@ -99,6 +107,8 @@ impl ApiClient {
                 token: None,
                 refresh_token: None,
                 leaderboards: HashMap::new(),
+                collections: HashMap::new(),
+                pending_objects: HashMap::new(),
                 rpc_response: None,
                 error: None,
                 username: None,
@@ -433,5 +443,65 @@ impl ApiClient {
 
     pub fn error(&self) -> Option<String> {
         self.state.borrow().error.clone()
+    }
+
+    pub fn get_storage_object(&self, collection: &str, key: &str) -> Option<Rc<ApiStorageObject>> {
+        Some(self.state.borrow().collections.get(collection)?
+            .get(key)?.clone())
+    }
+
+    pub fn create_storage_object(&mut self, collection: &str, key: &str, value: &str) {
+        assert!(self.state.borrow().token.is_some());
+        let object = ApiWriteStorageObject {
+            collection: collection.to_owned(),
+            key: key.to_owned(),
+            permission_read: 1,
+            permission_write: 1,
+            value: value.to_owned(),
+            version: "*".to_string(),
+        };
+        let body = ApiWriteStorageObjectsRequest {
+            objects: vec![object.clone()]
+        };
+
+        println!("{:?}", body);
+
+        let request = api::write_storage_objects(self.state.borrow().token.as_ref().unwrap(), body);
+
+        let collection = object.collection.clone();
+        let key = object.key.clone();
+        let mut objects = self.state.borrow_mut().pending_objects.entry(collection)
+            .or_insert(HashMap::new())
+            .insert(key, object);
+
+        self.state
+            .borrow_mut()
+            .make_request(request, {
+                let state2 = self.state.clone();
+                move |response|
+                    {
+                        for ack in response.acks.iter() {
+                            let mut s = state2.borrow_mut();
+                            if let Some(pending_object) = s.pending_objects.get_mut(&ack.collection) {
+                                let acked = pending_object.remove(&ack.key);
+                                if let Some(write_object) = acked {
+                                    s.collections.entry(ack.collection.clone())
+                                        .or_insert(HashMap::new())
+                                        .insert(ack.key.clone(), Rc::new(ApiStorageObject {
+                                            key: ack.key.clone(),
+                                            collection: ack.collection.clone(),
+                                            version: ack.version.clone(),
+                                            user_id: ack.user_id.clone(),
+                                            create_time: "".to_owned(),
+                                            update_time: "".to_owned(),
+                                            permission_write: write_object.permission_write,
+                                            permission_read: write_object.permission_read,
+                                            value: write_object.value,
+                                        }));
+                                }
+                            }
+                        }
+                    }
+            })
     }
 }
