@@ -66,7 +66,7 @@ trait ToRestString {
 {{- $classname := $defname | title }}
 
 /// {{ $definition.Description | stripNewlines }}
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct {{ $classname }} {
     {{- range $propname, $property := $definition.Properties }}
@@ -129,7 +129,7 @@ impl ToRestString for {{ $classname }} {
         {{- $isPreviousField = true }}
 
 	{{- if eq $property.Type "array" }}
-        output.push_str(&format!("\"{{ $propname }}\": [{}],", {
+        output.push_str(&format!("\"{{ $propname }}\": [{}]", {
             let vec_string = self.{{ $fieldname }}.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         })); 

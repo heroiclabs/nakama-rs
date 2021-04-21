@@ -36,7 +36,7 @@ trait ToRestString {
 }
 
 /// A single user-role pair.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct GroupUserListGroupUser {
     pub state: i32,
@@ -60,7 +60,7 @@ impl ToRestString for GroupUserListGroupUser {
 }
 
 /// A single group-role pair.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct UserGroupListUserGroup {
     pub group: ApiGroup,
@@ -83,8 +83,42 @@ impl ToRestString for UserGroupListUserGroup {
     }
 }
 
+/// - UNKNOWN: Unknown environment.  - SANDBOX: Sandbox/test environment.  - PRODUCTION: Production environment.
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ValidatedPurchaseEnvironment {
+}
+
+impl ToRestString for ValidatedPurchaseEnvironment {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        output.push_str("}");
+	return output;
+    }
+}
+
+/// - APPLE_APP_STORE: Apple App Store  - GOOGLE_PLAY_STORE: Google Play Store  - HUAWEI_APP_GALLERY: Huawei App Gallery
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ValidatedPurchaseStore {
+}
+
+impl ToRestString for ValidatedPurchaseStore {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        output.push_str("}");
+	return output;
+    }
+}
+
 /// Record values to write.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct WriteLeaderboardRecordRequestLeaderboardRecordWrite {
     pub metadata: String,
@@ -112,7 +146,7 @@ impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
 }
 
 /// Record values to write.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct WriteTournamentRecordRequestTournamentRecordWrite {
     pub metadata: String,
@@ -140,7 +174,7 @@ impl ToRestString for WriteTournamentRecordRequestTournamentRecordWrite {
 }
 
 /// A user with additional account details. Always the current user.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccount {
     pub custom_id: String,
@@ -162,7 +196,7 @@ impl ToRestString for ApiAccount {
 	output.push_str(&format!("\"customId\": \"{}\"", self.custom_id));
         
         output.push_str(",");
-        output.push_str(&format!("\"devices\": [{}],", {
+        output.push_str(&format!("\"devices\": [{}]", {
             let vec_string = self.devices.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -187,7 +221,7 @@ impl ToRestString for ApiAccount {
 }
 
 /// Send a Apple Sign In token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountApple {
     pub token: String,
@@ -218,7 +252,7 @@ impl ToRestString for ApiAccountApple {
 }
 
 /// Send a custom ID to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountCustom {
     pub id: String,
@@ -249,7 +283,7 @@ impl ToRestString for ApiAccountCustom {
 }
 
 /// Send a device to the server. Used with authenticate/link/unlink and user.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountDevice {
     pub id: String,
@@ -280,7 +314,7 @@ impl ToRestString for ApiAccountDevice {
 }
 
 /// Send an email with password to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountEmail {
     pub email: String,
@@ -315,7 +349,7 @@ impl ToRestString for ApiAccountEmail {
 }
 
 /// Send a Facebook token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountFacebook {
     pub token: String,
@@ -346,7 +380,7 @@ impl ToRestString for ApiAccountFacebook {
 }
 
 /// Send a Facebook Instant Game token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountFacebookInstantGame {
     pub signed_player_info: String,
@@ -377,7 +411,7 @@ impl ToRestString for ApiAccountFacebookInstantGame {
 }
 
 /// Send Apple's Game Center account credentials to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountGameCenter {
     pub bundle_id: String,
@@ -428,7 +462,7 @@ impl ToRestString for ApiAccountGameCenter {
 }
 
 /// Send a Google token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountGoogle {
     pub token: String,
@@ -459,7 +493,7 @@ impl ToRestString for ApiAccountGoogle {
 }
 
 /// Send a Steam token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountSteam {
     pub token: String,
@@ -490,7 +524,7 @@ impl ToRestString for ApiAccountSteam {
 }
 
 /// A message sent on a channel.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiChannelMessage {
     pub channel_id: String,
@@ -558,7 +592,7 @@ impl ToRestString for ApiChannelMessage {
 }
 
 /// A list of channel messages, usually a result of a list operation.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiChannelMessageList {
     pub cacheable_cursor: String,
@@ -577,7 +611,7 @@ impl ToRestString for ApiChannelMessageList {
 	output.push_str(&format!("\"cacheableCursor\": \"{}\"", self.cacheable_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"messages\": [{}],", {
+        output.push_str(&format!("\"messages\": [{}]", {
             let vec_string = self.messages.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -593,7 +627,7 @@ impl ToRestString for ApiChannelMessageList {
 }
 
 /// Create a group with the current user as owner.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiCreateGroupRequest {
     pub avatar_url: String,
@@ -633,7 +667,7 @@ impl ToRestString for ApiCreateGroupRequest {
 }
 
 /// Storage objects to delete.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiDeleteStorageObjectId {
     pub collection: String,
@@ -661,7 +695,7 @@ impl ToRestString for ApiDeleteStorageObjectId {
 }
 
 /// Batch delete storage objects.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiDeleteStorageObjectsRequest {
     pub object_ids: Vec<ApiDeleteStorageObjectId>,
@@ -674,7 +708,7 @@ impl ToRestString for ApiDeleteStorageObjectsRequest {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"objectIds\": [{}],", {
+        output.push_str(&format!("\"objectIds\": [{}]", {
             let vec_string = self.object_ids.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -684,7 +718,7 @@ impl ToRestString for ApiDeleteStorageObjectsRequest {
 }
 
 /// Represents an event to be passed through the server to registered event handlers.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiEvent {
     pub external: bool,
@@ -723,7 +757,7 @@ impl ToRestString for ApiEvent {
 }
 
 /// A friend of a user.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiFriend {
     pub state: i32,
@@ -751,7 +785,7 @@ impl ToRestString for ApiFriend {
 }
 
 /// A collection of zero or more friends of the user.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiFriendList {
     pub cursor: String,
@@ -768,7 +802,7 @@ impl ToRestString for ApiFriendList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"friends\": [{}],", {
+        output.push_str(&format!("\"friends\": [{}]", {
             let vec_string = self.friends.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -778,7 +812,7 @@ impl ToRestString for ApiFriendList {
 }
 
 /// A group in the server.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroup {
     pub avatar_url: String,
@@ -842,7 +876,7 @@ impl ToRestString for ApiGroup {
 }
 
 /// One or more groups returned from a listing operation.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroupList {
     pub cursor: String,
@@ -859,7 +893,7 @@ impl ToRestString for ApiGroupList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"groups\": [{}],", {
+        output.push_str(&format!("\"groups\": [{}]", {
             let vec_string = self.groups.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -869,7 +903,7 @@ impl ToRestString for ApiGroupList {
 }
 
 /// A list of users belonging to a group, along with their role.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroupUserList {
     pub cursor: String,
@@ -886,7 +920,7 @@ impl ToRestString for ApiGroupUserList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"groupUsers\": [{}],", {
+        output.push_str(&format!("\"groupUsers\": [{}]", {
             let vec_string = self.group_users.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -896,7 +930,7 @@ impl ToRestString for ApiGroupUserList {
 }
 
 /// Represents a complete leaderboard record with all scores and associated metadata.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLeaderboardRecord {
     pub create_time: String,
@@ -960,7 +994,7 @@ impl ToRestString for ApiLeaderboardRecord {
 }
 
 /// A set of leaderboard records, may be part of a leaderboard records page or a batch of individual records.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLeaderboardRecordList {
     pub next_cursor: String,
@@ -979,7 +1013,7 @@ impl ToRestString for ApiLeaderboardRecordList {
 	output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"ownerRecords\": [{}],", {
+        output.push_str(&format!("\"ownerRecords\": [{}]", {
             let vec_string = self.owner_records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -988,7 +1022,7 @@ impl ToRestString for ApiLeaderboardRecordList {
 	output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"records\": [{}],", {
+        output.push_str(&format!("\"records\": [{}]", {
             let vec_string = self.records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -998,7 +1032,7 @@ impl ToRestString for ApiLeaderboardRecordList {
 }
 
 /// Link Steam to the current user's account.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLinkSteamRequest {
     pub account: ApiAccountSteam,
@@ -1022,7 +1056,7 @@ impl ToRestString for ApiLinkSteamRequest {
 }
 
 /// Represents a realtime match.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiMatch {
     pub authoritative: bool,
@@ -1062,7 +1096,7 @@ impl ToRestString for ApiMatch {
 }
 
 /// A list of realtime matches.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiMatchList {
     pub matches: Vec<ApiMatch>,
@@ -1075,7 +1109,7 @@ impl ToRestString for ApiMatchList {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"matches\": [{}],", {
+        output.push_str(&format!("\"matches\": [{}]", {
             let vec_string = self.matches.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1085,7 +1119,7 @@ impl ToRestString for ApiMatchList {
 }
 
 /// A notification in the server.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiNotification {
     pub code: i32,
@@ -1129,7 +1163,7 @@ impl ToRestString for ApiNotification {
 }
 
 /// A collection of zero or more notifications.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiNotificationList {
     pub cacheable_cursor: String,
@@ -1146,7 +1180,7 @@ impl ToRestString for ApiNotificationList {
 	output.push_str(&format!("\"cacheableCursor\": \"{}\"", self.cacheable_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"notifications\": [{}],", {
+        output.push_str(&format!("\"notifications\": [{}]", {
             let vec_string = self.notifications.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1156,7 +1190,7 @@ impl ToRestString for ApiNotificationList {
 }
 
 /// Storage objects to get.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiReadStorageObjectId {
     pub collection: String,
@@ -1184,7 +1218,7 @@ impl ToRestString for ApiReadStorageObjectId {
 }
 
 /// Batch get storage objects.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiReadStorageObjectsRequest {
     pub object_ids: Vec<ApiReadStorageObjectId>,
@@ -1197,7 +1231,7 @@ impl ToRestString for ApiReadStorageObjectsRequest {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"objectIds\": [{}],", {
+        output.push_str(&format!("\"objectIds\": [{}]", {
             let vec_string = self.object_ids.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1207,7 +1241,7 @@ impl ToRestString for ApiReadStorageObjectsRequest {
 }
 
 /// Execute an Lua function on the server.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiRpc {
     pub http_key: String,
@@ -1235,7 +1269,7 @@ impl ToRestString for ApiRpc {
 }
 
 /// A user's session used to authenticate messages.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSession {
     pub created: bool,
@@ -1263,7 +1297,7 @@ impl ToRestString for ApiSession {
 }
 
 /// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSessionLogoutRequest {
     pub refresh_token: String,
@@ -1287,7 +1321,7 @@ impl ToRestString for ApiSessionLogoutRequest {
 }
 
 /// Authenticate against the server with a refresh token.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSessionRefreshRequest {
     pub token: String,
@@ -1318,7 +1352,7 @@ impl ToRestString for ApiSessionRefreshRequest {
 }
 
 /// An object within the storage engine.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObject {
     pub collection: String,
@@ -1370,7 +1404,7 @@ impl ToRestString for ApiStorageObject {
 }
 
 /// A storage acknowledgement.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectAck {
     pub collection: String,
@@ -1402,7 +1436,7 @@ impl ToRestString for ApiStorageObjectAck {
 }
 
 /// Batch of acknowledgements for the storage object write.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectAcks {
     pub acks: Vec<ApiStorageObjectAck>,
@@ -1415,7 +1449,7 @@ impl ToRestString for ApiStorageObjectAcks {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"acks\": [{}],", {
+        output.push_str(&format!("\"acks\": [{}]", {
             let vec_string = self.acks.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1425,7 +1459,7 @@ impl ToRestString for ApiStorageObjectAcks {
 }
 
 /// List of storage objects.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectList {
     pub cursor: String,
@@ -1442,7 +1476,7 @@ impl ToRestString for ApiStorageObjectList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"objects\": [{}],", {
+        output.push_str(&format!("\"objects\": [{}]", {
             let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1452,7 +1486,7 @@ impl ToRestString for ApiStorageObjectList {
 }
 
 /// Batch of storage objects.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjects {
     pub objects: Vec<ApiStorageObject>,
@@ -1465,7 +1499,7 @@ impl ToRestString for ApiStorageObjects {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"objects\": [{}],", {
+        output.push_str(&format!("\"objects\": [{}]", {
             let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1475,7 +1509,7 @@ impl ToRestString for ApiStorageObjects {
 }
 
 /// A tournament on the server.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournament {
     pub can_enter: bool,
@@ -1559,7 +1593,7 @@ impl ToRestString for ApiTournament {
 }
 
 /// A list of tournaments.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentList {
     pub cursor: String,
@@ -1576,7 +1610,7 @@ impl ToRestString for ApiTournamentList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"tournaments\": [{}],", {
+        output.push_str(&format!("\"tournaments\": [{}]", {
             let vec_string = self.tournaments.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1586,7 +1620,7 @@ impl ToRestString for ApiTournamentList {
 }
 
 /// A set of tournament records which may be part of a tournament records page or a batch of individual records.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentRecordList {
     pub next_cursor: String,
@@ -1605,7 +1639,7 @@ impl ToRestString for ApiTournamentRecordList {
 	output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"ownerRecords\": [{}],", {
+        output.push_str(&format!("\"ownerRecords\": [{}]", {
             let vec_string = self.owner_records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1614,7 +1648,7 @@ impl ToRestString for ApiTournamentRecordList {
 	output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"records\": [{}],", {
+        output.push_str(&format!("\"records\": [{}]", {
             let vec_string = self.records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1624,7 +1658,7 @@ impl ToRestString for ApiTournamentRecordList {
 }
 
 /// Update a user's account details.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUpdateAccountRequest {
     pub avatar_url: String,
@@ -1664,7 +1698,7 @@ impl ToRestString for ApiUpdateAccountRequest {
 }
 
 /// Update fields in a given group.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUpdateGroupRequest {
     pub avatar_url: String,
@@ -1704,7 +1738,7 @@ impl ToRestString for ApiUpdateGroupRequest {
 }
 
 /// A user in the server.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUser {
     pub apple_id: String,
@@ -1792,7 +1826,7 @@ impl ToRestString for ApiUser {
 }
 
 /// A list of groups belonging to a user, along with the user's role in each group.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUserGroupList {
     pub cursor: String,
@@ -1809,7 +1843,7 @@ impl ToRestString for ApiUserGroupList {
 	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
         
         output.push_str(",");
-        output.push_str(&format!("\"userGroups\": [{}],", {
+        output.push_str(&format!("\"userGroups\": [{}]", {
             let vec_string = self.user_groups.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1819,7 +1853,7 @@ impl ToRestString for ApiUserGroupList {
 }
 
 /// A collection of zero or more users.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUsers {
     pub users: Vec<ApiUser>,
@@ -1832,7 +1866,7 @@ impl ToRestString for ApiUsers {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"users\": [{}],", {
+        output.push_str(&format!("\"users\": [{}]", {
             let vec_string = self.users.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1841,8 +1875,143 @@ impl ToRestString for ApiUsers {
     }
 }
 
+/// 
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiValidatePurchaseAppleRequest {
+    pub receipt: String,
+}
+
+impl ToRestString for ApiValidatePurchaseAppleRequest {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        
+	output.push_str(&format!("\"receipt\": \"{}\"", self.receipt));
+        output.push_str("}");
+	return output;
+    }
+}
+
+/// 
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiValidatePurchaseGoogleRequest {
+    pub purchase: String,
+}
+
+impl ToRestString for ApiValidatePurchaseGoogleRequest {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        
+	output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
+        output.push_str("}");
+	return output;
+    }
+}
+
+/// 
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiValidatePurchaseHuaweiRequest {
+    pub purchase: String,
+    pub signature: String,
+}
+
+impl ToRestString for ApiValidatePurchaseHuaweiRequest {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        
+	output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"signature\": \"{}\"", self.signature));
+        output.push_str("}");
+	return output;
+    }
+}
+
+/// 
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiValidatePurchaseResponse {
+    pub validated_purchases: Vec<ApiValidatedPurchase>,
+}
+
+impl ToRestString for ApiValidatePurchaseResponse {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        
+        output.push_str(&format!("\"validatedPurchases\": [{}]", {
+            let vec_string = self.validated_purchases.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            vec_string.join(", ")
+        }));
+        output.push_str("}");
+	return output;
+    }
+}
+
+/// Validated Purchase stored by Nakama.
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiValidatedPurchase {
+    pub create_time: String,
+    pub environment: ValidatedPurchaseEnvironment,
+    pub product_id: String,
+    pub provider_response: String,
+    pub purchase_time: String,
+    pub store: ValidatedPurchaseStore,
+    pub transaction_id: String,
+    pub update_time: String,
+}
+
+impl ToRestString for ApiValidatedPurchase {
+    fn to_string(&self) -> String {
+	let mut output = String::new();
+
+        
+        output.push_str("{");
+        
+	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"environment\": {}", self.environment.to_string()));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"productId\": \"{}\"", self.product_id));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"providerResponse\": \"{}\"", self.provider_response));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"purchaseTime\": \"{}\"", self.purchase_time));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"store\": {}", self.store.to_string()));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"transactionId\": \"{}\"", self.transaction_id));
+        
+        output.push_str(",");
+	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+        output.push_str("}");
+	return output;
+    }
+}
+
 /// The object to store.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiWriteStorageObject {
     pub collection: String,
@@ -1882,7 +2051,7 @@ impl ToRestString for ApiWriteStorageObject {
 }
 
 /// Write objects to the storage engine.
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiWriteStorageObjectsRequest {
     pub objects: Vec<ApiWriteStorageObject>,
@@ -1895,7 +2064,7 @@ impl ToRestString for ApiWriteStorageObjectsRequest {
         
         output.push_str("{");
         
-        output.push_str(&format!("\"objects\": [{}],", {
+        output.push_str(&format!("\"objects\": [{}]", {
             let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -1905,7 +2074,7 @@ impl ToRestString for ApiWriteStorageObjectsRequest {
 }
 
 /// 
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ProtobufAny {
     pub type_url: String,
@@ -1929,7 +2098,7 @@ impl ToRestString for ProtobufAny {
 }
 
 /// 
-#[derive(Debug, DeJson, Default)]
+#[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct RpcStatus {
     pub code: i32,
@@ -1947,7 +2116,7 @@ impl ToRestString for RpcStatus {
 	output.push_str(&format!("\"code\": {}", self.code.to_string()));
         
         output.push_str(",");
-        output.push_str(&format!("\"details\": [{}],", {
+        output.push_str(&format!("\"details\": [{}]", {
             let vec_string = self.details.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
@@ -3657,6 +3826,93 @@ if let Some(param) = cursor {
        _marker: std::marker::PhantomData
     }
 }
+/// Validate Apple IAP Receipt
+pub fn validate_purchase_apple(
+    bearer_token: &str,
+    body: ApiValidatePurchaseAppleRequest,
+) -> RestRequest<ApiValidatePurchaseResponse> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/iap/purchase/apple".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Validate Google IAP Receipt
+pub fn validate_purchase_google(
+    bearer_token: &str,
+    body: ApiValidatePurchaseGoogleRequest,
+) -> RestRequest<ApiValidatePurchaseResponse> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/iap/purchase/google".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
+/// Validate Huawei IAP Receipt
+pub fn validate_purchase_huawei(
+    bearer_token: &str,
+    body: ApiValidatePurchaseHuaweiRequest,
+) -> RestRequest<ApiValidatePurchaseResponse> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/iap/purchase/huawei".to_string();
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication =
+    Authentication::Bearer {
+	token: bearer_token.to_owned()
+    };
+    let body_json = body.to_string();
+    
+
+    let method = Method::Post;
+
+    RestRequest {
+       authentication,
+       urlpath,
+       query_params,
+       body: body_json,
+       method,
+       _marker: std::marker::PhantomData
+    }
+}
 /// Delete a leaderboard record.
 pub fn delete_leaderboard_record(
     bearer_token: &str,
@@ -4073,6 +4329,7 @@ pub fn write_storage_objects(
 	token: bearer_token.to_owned()
     };
     let body_json = body.to_string();
+    println!("{}", body_json);
     
 
     let method = Method::Put;
