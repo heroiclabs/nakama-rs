@@ -10,6 +10,4 @@ description = "Pure rust nakama protocol implementation"
 
 [dependencies]
 base64 = "0.13"
-nanoserde = "0.1"
-
-quad-net = "0.1.1"
+nanoserde = "0.1.26"
