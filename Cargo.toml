@@ -19,4 +19,6 @@ isahc = "1.4.0"
 qws = { version = "0.7.9", features = ["ssl"] }
 
 [dev-dependencies]
+simple_logger = "1.11.0"
+cassette = "0.2.3"
 futures = "0.3.15"
