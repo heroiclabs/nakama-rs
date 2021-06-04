@@ -4,10 +4,12 @@ mod api_gen_enum;
 pub mod client;
 pub mod client_adapter;
 pub mod config;
+pub mod http_adapter;
 pub mod matchmaker;
 pub mod session;
 pub mod socket;
 pub mod socket_adapter;
+pub mod web_socket_adapter;
 
 pub mod api {
     pub use super::api_gen::*;
