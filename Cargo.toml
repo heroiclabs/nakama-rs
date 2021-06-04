@@ -13,6 +13,10 @@ base64 = "0.13"
 nanoserde = "0.1.26"
 urlencoding = "2.0.0-alpha.1"
 async-trait = "0.1.50"
+oneshot = "0.1.2"
 log = "0.4.14"
 isahc = "1.4.0"
 qws = { version = "0.7.9", features = ["ssl"] }
+
+[dev-dependencies]
+futures = "0.3.15"
