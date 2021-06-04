@@ -220,14 +220,11 @@ impl SocketAdapter for WebSocketAdapter {
 #[cfg(test)]
 mod test {
     use super::*;
-    use simple_logger::SimpleLogger;
     use std::thread::sleep;
     use std::time::Duration;
 
     #[test]
     fn test() {
-        SimpleLogger::new().init().unwrap();
-
         let mut socket_adapter = WebSocketAdapter::new();
         socket_adapter.connect("ws://echo.websocket.org", 0);
         socket_adapter.on_received(move |data| println!("{:?}", data));
