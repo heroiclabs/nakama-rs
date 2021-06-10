@@ -24,7 +24,7 @@ use std::sync::mpsc;
 // This example demonstrates how to connect to a socket
 fn main() {
     block_on(async {
-        let client = DefaultClient::new_with_adapter();
+        let client = DefaultClient::new_with_adapter_and_defaults();
         let mut socket = WebSocket::new_with_adapter();
         tick_socket(&socket);
 

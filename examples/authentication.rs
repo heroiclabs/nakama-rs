@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 fn main() {
     block_on(async {
-        let client = DefaultClient::new_with_adapter();
+        let client = DefaultClient::new_with_adapter_and_defaults();
 
         let result = client
             .authenticate_device("too_short", None, true, HashMap::new())

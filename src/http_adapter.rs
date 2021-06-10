@@ -43,11 +43,11 @@ impl Error for RestHttpError {}
 
 pub struct RestHttpAdapter {
     server: String,
-    port: i32,
+    port: u32,
 }
 
 impl RestHttpAdapter {
-    pub fn new(server: &str, port: i32) -> RestHttpAdapter {
+    pub fn new(server: &str, port: u32) -> RestHttpAdapter {
         RestHttpAdapter {
             server: server.to_owned(),
             port,

@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 #[test]
 fn test_session_variables() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
         let mut vars = HashMap::new();

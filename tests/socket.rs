@@ -24,7 +24,7 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 
 async fn socket_with_user(id: &str) -> (Session, WebSocket<WebSocketAdapter>) {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let socket = WebSocket::new_with_adapter();
     tick_socket(&socket);
 

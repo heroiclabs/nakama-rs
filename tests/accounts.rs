@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 #[test]
 fn test_get_account() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
         let mut session = client
@@ -37,7 +37,7 @@ fn test_get_account() {
 
 #[test]
 fn test_update_account() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
         let mut session = client
