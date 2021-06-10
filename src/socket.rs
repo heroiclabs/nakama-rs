@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc};
+use crate::matchmaker::Matchmaker;
 use crate::session::Session;
 use async_trait::async_trait;
 use nanoserde::{DeJson, DeJsonErr, DeJsonState, SerJson};
@@ -592,13 +593,18 @@ pub trait Socket {
         user_presence: &UserPresence,
     ) -> Result<(), Self::Error>;
 
-    async fn add_matchmaker(
+    async fn add_matchmaker_manual(
         &self,
         query: &str,
         min_count: Option<i32>,
         max_count: Option<i32>,
         string_properties: HashMap<String, String>,
         numeric_properties: HashMap<String, f64>,
+    ) -> Result<MatchmakerTicket, Self::Error>;
+
+    async fn add_matchmaker(
+        &self,
+        matchmaker: &Matchmaker,
     ) -> Result<MatchmakerTicket, Self::Error>;
 
     async fn add_matchmaker_party(

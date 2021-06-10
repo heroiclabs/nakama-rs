@@ -34,6 +34,7 @@ use std::error;
 use std::sync::{Arc, Mutex};
 
 use crate::default_client::str_slice_to_owned;
+use crate::matchmaker::Matchmaker;
 use crate::web_socket_adapter::WebSocketAdapter;
 use oneshot;
 use oneshot::RecvError;
@@ -555,7 +556,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
-    async fn add_matchmaker(
+    async fn add_matchmaker_manual(
         &self,
         query: &str,
         min_count: Option<i32>,
@@ -578,6 +579,20 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let envelope = self.wait_response(cid).await?;
 
         Ok(envelope.matchmaker_ticket.unwrap())
+    }
+
+    async fn add_matchmaker(
+        &self,
+        matchmaker: &Matchmaker,
+    ) -> Result<MatchmakerTicket, Self::Error> {
+        self.add_matchmaker_manual(
+            &matchmaker.query,
+            Some(matchmaker.min_count),
+            Some(matchmaker.max_count),
+            matchmaker.string_properties.clone(),
+            matchmaker.numeric_properties.clone(),
+        )
+        .await
     }
 
     async fn add_matchmaker_party(

@@ -35,10 +35,10 @@ enum Boolean {
 }
 
 pub struct Matchmaker {
-    pub min_count: u32,
-    pub max_count: u32,
-    string_properties: HashMap<String, String>,
-    numeric_properties: HashMap<String, f64>,
+    pub min_count: i32,
+    pub max_count: i32,
+    pub string_properties: HashMap<String, String>,
+    pub numeric_properties: HashMap<String, f64>,
     pub query: String,
 }
 
@@ -199,12 +199,12 @@ impl<'a> Matchmaker {
         self.string_properties.contains_key(name) || self.numeric_properties.contains_key(name)
     }
 
-    pub fn min(&mut self, min: u32) -> &mut Self {
+    pub fn min(&mut self, min: i32) -> &mut Self {
         self.min_count = min;
         self
     }
 
-    pub fn max(&mut self, max: u32) -> &mut Self {
+    pub fn max(&mut self, max: i32) -> &mut Self {
         self.max_count = max;
         self
     }
