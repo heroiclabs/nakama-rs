@@ -137,6 +137,12 @@ pub fn str_slice_to_owned(slice: &[&str]) -> Vec<String> {
     slice.iter().map(|id| (*id).to_owned()).collect()
 }
 
+pub fn string_map_to_owned_string_map(vars: HashMap<&str, &str>) -> HashMap<String, String> {
+    vars.iter()
+        .map(|(&k, &v)| (k.to_owned(), v.to_owned()))
+        .collect()
+}
+
 pub enum DefaultClientError<A: ClientAdapter> {
     HttpAdapterError(A::Error),
     ClientError(String),
@@ -196,14 +202,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_apple(
             &self.server_key,
             &self.server_password,
             ApiAccountApple {
                 token: token.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -224,14 +230,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         id: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_custom(
             &self.server_key,
             &self.server_password,
             ApiAccountCustom {
                 id: id.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -253,14 +259,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         id: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_device(
             &self.server_key.clone(),
             &self.server_password,
             ApiAccountDevice {
                 id: id.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -277,7 +283,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         password: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_email(
             &self.server_key,
@@ -285,7 +291,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             ApiAccountEmail {
                 email: email.to_owned(),
                 password: password.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -301,7 +307,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
         import: bool,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_facebook(
@@ -309,7 +315,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             &self.server_password,
             ApiAccountFacebook {
                 token: token.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -331,7 +337,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         timestamp: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_game_center(
             &self.server_key,
@@ -343,7 +349,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 salt: salt.to_owned(),
                 signature: signature.to_owned(),
                 timestamp_seconds: timestamp.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -359,14 +365,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_google(
             &self.server_key,
             &self.server_password,
             ApiAccountGoogle {
                 token: token.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -382,14 +388,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_google(
             &self.server_key,
             &self.server_password,
             ApiAccountGoogle {
                 token: token.to_owned(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
             Some(create),
             username,
@@ -517,7 +523,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         &self,
         session: &mut Session,
         name: &str,
-        properties: HashMap<String, String>,
+        properties: HashMap<&str, &str>,
     ) -> Result<(), Self::Error> {
         let request = api::event(
             &session.auth_token,
@@ -525,7 +531,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 name: name.to_owned(),
                 timestamp: "".to_owned(),
                 external: true,
-                properties,
+                properties: string_map_to_owned_string_map(properties),
             },
         );
         self.send(request).await
@@ -1033,14 +1039,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     async fn session_refresh(
         &self,
         session: &mut Session,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::session_refresh(
             &self.server_key,
             &self.server_password,
             ApiSessionRefreshRequest {
                 token: session.auth_token.clone(),
-                vars,
+                vars: string_map_to_owned_string_map(vars),
             },
         );
 

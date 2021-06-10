@@ -48,7 +48,7 @@ pub trait Client {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_custom(
@@ -56,7 +56,7 @@ pub trait Client {
         id: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_device(
@@ -64,7 +64,7 @@ pub trait Client {
         id: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_email(
@@ -73,7 +73,7 @@ pub trait Client {
         password: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_facebook(
@@ -81,7 +81,7 @@ pub trait Client {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
         import: bool,
     ) -> Result<Session, Self::Error>;
 
@@ -95,7 +95,7 @@ pub trait Client {
         timestamp: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_google(
@@ -103,7 +103,7 @@ pub trait Client {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn authenticate_steam(
@@ -111,7 +111,7 @@ pub trait Client {
         token: &str,
         username: Option<&str>,
         create: bool,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn ban_group_users(
@@ -177,7 +177,7 @@ pub trait Client {
         &self,
         session: &mut Session,
         name: &str,
-        properties: HashMap<String, String>,
+        properties: HashMap<&str, &str>,
     ) -> Result<(), Self::Error>;
 
     async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error>;
@@ -421,7 +421,7 @@ pub trait Client {
     async fn session_refresh(
         &self,
         session: &mut Session,
-        vars: HashMap<String, String>,
+        vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
     async fn unlink_apple(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;

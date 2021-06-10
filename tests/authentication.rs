@@ -22,8 +22,9 @@ fn test_authenticate_device_id_too_short() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
+        let vars = [("Hello", "World!")].iter().cloned().collect();
         client
-            .authenticate_device("too_short", None, true, HashMap::new())
+            .authenticate_device("too_short", None, true, vars)
             .await
     });
 
@@ -36,8 +37,10 @@ fn test_authenticate_device_id() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
+        let mut vars = HashMap::new();
+        vars.insert("Hello", "World!");
         client
-            .authenticate_device("long_enough_device_id", None, true, HashMap::new())
+            .authenticate_device("long_enough_device_id", None, true, vars)
             .await
     });
 
