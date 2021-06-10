@@ -1,3 +1,17 @@
+// Copyright 2021 The Nakama Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use crate::api::{ApiChannelMessage, ApiNotification, ApiRpc};
 use crate::session::Session;
 use crate::socket::{
@@ -20,9 +34,9 @@ use std::error;
 use std::sync::{Arc, Mutex};
 
 use crate::default_client::str_slice_to_owned;
-use crate::web_socket_adapter::{WebSocketAdapter};
+use crate::web_socket_adapter::WebSocketAdapter;
 use oneshot;
-use oneshot::{RecvError};
+use oneshot::RecvError;
 use std::fmt::{Debug, Display, Formatter};
 
 pub enum WebSocketError<A: SocketAdapter> {
@@ -523,7 +537,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
     }
 
-    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence) -> Result<(), Self::Error> {
+    async fn accept_party_member(
+        &self,
+        party_id: &str,
+        user_presence: &UserPresence,
+    ) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_accept = Some(PartyAccept {
             party_id: party_id.to_owned(),
@@ -752,7 +770,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     }
 
     async fn leave_match(&self, match_id: &str) -> Result<(), Self::Error> {
-        let mut envelope= self.make_envelope();
+        let mut envelope = self.make_envelope();
         envelope.match_leave = Some(MatchLeave {
             match_id: match_id.to_owned(),
         });
@@ -790,7 +808,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.party_join_request.unwrap())
     }
 
-    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence) -> Result<(), Self::Error> {
+    async fn promote_party_member(
+        &self,
+        party_id: &str,
+        party_member: UserPresence,
+    ) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_promote = Some(PartyPromote {
             party_id: party_id.to_owned(),
@@ -832,7 +854,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
-    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str) -> Result<(), Self::Error> {
+    async fn remove_matchmaker_party(
+        &self,
+        party_id: &str,
+        ticket: &str,
+    ) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.party_matchmaker_remove = Some(PartyMatchmakerRemove {
             party_id: party_id.to_owned(),
@@ -843,7 +869,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
-    async fn remove_party_member(&self, party_id: &str, presence: UserPresence) -> Result<(), Self::Error> {
+    async fn remove_party_member(
+        &self,
+        party_id: &str,
+        presence: UserPresence,
+    ) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_remove = Some(PartyRemove {
             party_id: party_id.to_owned(),
@@ -909,7 +939,12 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
-    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]) -> Result<(), Self::Error> {
+    async fn send_party_data(
+        &self,
+        party_id: &str,
+        op_code: i64,
+        data: &[u8],
+    ) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.party_data_send = Some(PartyDataSend {
             party_id: party_id.to_owned(),

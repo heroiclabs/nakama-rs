@@ -1,3 +1,17 @@
+// Copyright 2021 The Nakama Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
@@ -131,19 +145,27 @@ fn main() {
         let web_socket = web_socket.clone();
         let web_socket2 = web_socket2.clone();
         async move {
-            web_socket.join_chat("MyRoom", 1, false, false).await.expect("Failed to join chat");
+            web_socket
+                .join_chat("MyRoom", 1, false, false)
+                .await
+                .expect("Failed to join chat");
             let channel = web_socket2
                 .join_chat("MyRoom", 1, false, false)
                 .await
                 .unwrap();
             web_socket2
                 .write_chat_message(&channel.id, "{\"text\":\"Hello World!\"}")
-                .await.expect("Failed to write chat message");
+                .await
+                .expect("Failed to write chat message");
         }
     });
 
-    send_futures.send(do_some_chatting).expect("Failed to send future");
-    rx_response.recv().expect("Failed to receive future response");
+    send_futures
+        .send(do_some_chatting)
+        .expect("Failed to send future");
+    rx_response
+        .recv()
+        .expect("Failed to receive future response");
 
     kill_tick.send(()).expect("Failed to send kill");
     kill_network_thread.send(()).expect("Failed to send kill");
