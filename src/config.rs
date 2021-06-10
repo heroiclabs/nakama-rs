@@ -13,3 +13,6 @@
 // limitations under the License.
 
 pub const DEFAULT_PORT: u32 = 7350;
+pub const DEFAULT_HOST: &str = "http://127.0.0.1";
+pub const DEFAULT_SERVER_KEY: &str = "defaultkey";
+pub const DEFAULT_SERVER_PASSWORD: &str = "";

@@ -56,7 +56,7 @@ pub async fn re_create_group<C: Client>(
 }
 
 pub async fn authenticated_client(id_one: &str) -> (DefaultClient<RestHttpAdapter>, Session) {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let session = client
         .authenticate_device(id_one, Some(id_one.clone()), true, HashMap::new())
         .await
@@ -70,7 +70,7 @@ pub async fn clients_with_users(
     id_two: &str,
     id_three: &str,
 ) -> (DefaultClient<RestHttpAdapter>, Session, Session, Session) {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let session = client
         .authenticate_device(id_one, Some(id_one.clone()), true, HashMap::new())
         .await
@@ -96,7 +96,7 @@ pub async fn sockets_with_users(
     ApiAccount,
     ApiAccount,
 ) {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let socket = WebSocket::new_with_adapter();
     let socket2 = WebSocket::new_with_adapter();
     tick_socket(&socket);

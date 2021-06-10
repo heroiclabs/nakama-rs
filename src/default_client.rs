@@ -31,6 +31,7 @@ use crate::api::{
 use crate::api_gen::{ApiSession, ApiWriteStorageObjectsRequest};
 use crate::client::Client;
 use crate::client_adapter::ClientAdapter;
+use crate::config::{DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_KEY, DEFAULT_SERVER_PASSWORD};
 use crate::http_adapter::RestHttpAdapter;
 use crate::session::Session;
 use async_trait::async_trait;
@@ -42,6 +43,7 @@ use std::fmt::{Debug, Display, Formatter};
 pub struct DefaultClient<A: ClientAdapter> {
     adapter: A,
     server_key: String,
+    server_password: String,
 }
 
 #[derive(DeJson)]
@@ -52,17 +54,28 @@ pub struct ClientError {
 }
 
 impl DefaultClient<RestHttpAdapter> {
-    pub fn new_with_adapter() -> DefaultClient<RestHttpAdapter> {
-        let adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
-        DefaultClient::new(adapter)
+    pub fn new_with_adapter(
+        host: &str,
+        port: u32,
+        server_key: &str,
+        server_password: &str,
+    ) -> DefaultClient<RestHttpAdapter> {
+        let adapter = RestHttpAdapter::new(host, port);
+        DefaultClient::new(adapter, server_key, server_password)
+    }
+
+    pub fn new_with_adapter_and_defaults() -> DefaultClient<RestHttpAdapter> {
+        let adapter = RestHttpAdapter::new(DEFAULT_HOST, DEFAULT_PORT);
+        DefaultClient::new(adapter, DEFAULT_SERVER_KEY, DEFAULT_SERVER_PASSWORD)
     }
 }
 
 impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
-    pub fn new(adapter: A) -> DefaultClient<A> {
+    pub fn new(adapter: A, server_key: &str, server_password: &str) -> DefaultClient<A> {
         DefaultClient {
             adapter,
-            server_key: "defaultkey".to_owned(),
+            server_key: server_key.to_owned(),
+            server_password: server_password.to_owned(),
         }
     }
 
@@ -97,7 +110,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
         if let Some(refresh_token) = session.refresh_token.take() {
             let request = api::session_refresh(
                 &self.server_key,
-                "",
+                &self.server_password,
                 ApiSessionRefreshRequest {
                     vars: HashMap::new(),
                     token: refresh_token,
@@ -187,7 +200,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_apple(
             &self.server_key,
-            "",
+            &self.server_password,
             ApiAccountApple {
                 token: token.to_owned(),
                 vars,
@@ -215,7 +228,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_custom(
             &self.server_key,
-            "",
+            &self.server_password,
             ApiAccountCustom {
                 id: id.to_owned(),
                 vars,
@@ -244,7 +257,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_device(
             &self.server_key.clone(),
-            "",
+            &self.server_password,
             ApiAccountDevice {
                 id: id.to_owned(),
                 vars,
@@ -267,8 +280,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         vars: HashMap<String, String>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_email(
-            &self.server_key.clone(),
-            "",
+            &self.server_key,
+            &self.server_password,
             ApiAccountEmail {
                 email: email.to_owned(),
                 password: password.to_owned(),
@@ -292,8 +305,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         import: bool,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_facebook(
-            &self.server_key.clone(),
-            "",
+            &self.server_key,
+            &self.server_password,
             ApiAccountFacebook {
                 token: token.to_owned(),
                 vars,
@@ -321,8 +334,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         vars: HashMap<String, String>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_game_center(
-            &self.server_key.clone(),
-            "",
+            &self.server_key,
+            &self.server_password,
             ApiAccountGameCenter {
                 bundle_id: bundle_id.to_owned(),
                 player_id: player_id.to_owned(),
@@ -349,8 +362,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         vars: HashMap<String, String>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_google(
-            &self.server_key.clone(),
-            "",
+            &self.server_key,
+            &self.server_password,
             ApiAccountGoogle {
                 token: token.to_owned(),
                 vars,
@@ -372,8 +385,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         vars: HashMap<String, String>,
     ) -> Result<Session, Self::Error> {
         let request = api::authenticate_google(
-            &self.server_key.clone(),
-            "",
+            &self.server_key,
+            &self.server_password,
             ApiAccountGoogle {
                 token: token.to_owned(),
                 vars,
@@ -1024,7 +1037,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<Session, Self::Error> {
         let request = api::session_refresh(
             &self.server_key,
-            "",
+            &self.server_password,
             ApiSessionRefreshRequest {
                 token: session.auth_token.clone(),
                 vars,

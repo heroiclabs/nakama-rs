@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 #[test]
 fn test_authenticate_device_id_too_short() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
         client
@@ -33,7 +33,7 @@ fn test_authenticate_device_id_too_short() {
 
 #[test]
 fn test_authenticate_device_id() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
         client
@@ -47,7 +47,7 @@ fn test_authenticate_device_id() {
 
 #[test]
 fn test_authenticating_with_unknown_credentials() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let result = block_on(async {
         client
             .authenticate_email(
@@ -66,7 +66,7 @@ fn test_authenticating_with_unknown_credentials() {
 
 #[test]
 fn test_link_email() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let result = block_on(async {
         let mut session = client
             .authenticate_device("usersdeviceid", None, true, HashMap::new())
@@ -93,7 +93,7 @@ fn test_link_email() {
 
 #[test]
 fn test_unlink_email() {
-    let client = DefaultClient::new_with_adapter();
+    let client = DefaultClient::new_with_adapter_and_defaults();
     let result = block_on(async {
         let mut session = client
             .authenticate_device("usersdeviceid", None, true, HashMap::new())
