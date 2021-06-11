@@ -19,7 +19,7 @@ use nakama_rs::test_helpers;
 #[test]
 fn test_create_group() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -37,7 +37,7 @@ fn test_create_group() {
 #[test]
 fn test_update_group() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -66,7 +66,7 @@ fn test_update_group() {
 #[test]
 fn test_add_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, mut session3) = test_helpers::clients_with_users(
+        let (client, session1, session2, session3) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -90,7 +90,7 @@ fn test_add_group_users() {
 #[test]
 fn test_ban_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -109,7 +109,7 @@ fn test_ban_group_users() {
 #[test]
 fn test_delete_group() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -125,7 +125,7 @@ fn test_delete_group() {
 #[test]
 fn test_promote_group_user() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -144,7 +144,7 @@ fn test_promote_group_user() {
 #[test]
 fn test_demote_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -167,7 +167,7 @@ fn test_demote_group_users() {
 #[test]
 fn test_join_group() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -183,7 +183,7 @@ fn test_join_group() {
 #[test]
 fn test_kick_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -203,7 +203,7 @@ fn test_kick_group_users() {
 #[test]
 fn test_leave_group() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -220,7 +220,7 @@ fn test_leave_group() {
 #[test]
 fn test_list_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -249,7 +249,7 @@ fn test_list_group_users() {
 #[test]
 fn test_list_groups() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -276,7 +276,7 @@ fn test_list_groups() {
 #[test]
 fn test_list_current_user_groups() {
     // block_on(async {
-    //     let (client, mut session1, mut session2, mut session3) =
+    //     let (client, session1, session2, session3) =
     //         test_helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
     //             .await;
     //
@@ -298,7 +298,7 @@ fn test_list_current_user_groups() {
 #[test]
 fn test_list_user_groups() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",

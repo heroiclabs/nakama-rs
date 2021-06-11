@@ -30,7 +30,7 @@ fn main() {
 
         let (tx_presence, rx_presence) = mpsc::channel::<StatusPresenceEvent>();
 
-        let mut session = client
+        let session = client
             .authenticate_device("socket_example_id", None, true, HashMap::new())
             .await
             .expect("Failed to authenticate");
