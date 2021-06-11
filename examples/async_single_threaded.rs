@@ -51,7 +51,7 @@ fn main() {
         .unwrap();
 
     let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
-    let client = DefaultClient::new(http_adapter);
+    let client = DefaultClient::new(http_adapter, "defaultkey", "");
     let adapter = WebSocketAdapter::new();
     let adapter2 = WebSocketAdapter::new();
     let web_socket = WebSocket::new(adapter);
@@ -72,8 +72,8 @@ fn main() {
                         let session2 = client
                             .authenticate_device("testdeviceid2", None, true, HashMap::new())
                             .await;
-                        let mut session = session.unwrap();
-                        let mut session2 = session2.unwrap();
+                        let session = session.unwrap();
+                        let session2 = session2.unwrap();
                         web_socket.connect(&session, true, -1).await;
                         web_socket2.connect(&session2, true, -1).await;
                         state.replace(Connected);

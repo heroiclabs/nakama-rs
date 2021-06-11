@@ -19,7 +19,7 @@ use nakama_rs::test_helpers;
 #[test]
 fn test_add_friend_username() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -36,7 +36,7 @@ fn test_add_friend_username() {
 #[test]
 fn test_add_friend_id() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = test_helpers::clients_with_users(
+        let (client, session1, session2, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -54,7 +54,7 @@ fn test_add_friend_id() {
 #[test]
 fn test_list_friend() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -83,7 +83,7 @@ fn test_list_friend() {
 #[test]
 fn test_delete_friend() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",
@@ -104,7 +104,7 @@ fn test_delete_friend() {
 #[test]
 fn test_block_friend() {
     block_on(async {
-        let (client, mut session1, _, _) = test_helpers::clients_with_users(
+        let (client, session1, _, _) = test_helpers::clients_with_users(
             "friendtestuser1",
             "friendtestuser2",
             "friendtestuser3",

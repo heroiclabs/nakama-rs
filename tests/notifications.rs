@@ -19,7 +19,7 @@ use nakama_rs::test_helpers;
 #[test]
 fn test_list_notifications() {
     block_on(async {
-        let (client, mut session) = test_helpers::authenticated_client("notificationsuserid").await;
+        let (client, session) = test_helpers::authenticated_client("notificationsuserid").await;
         client
             .rpc(&session, "echo", Some("Hello World!"))
             .await
@@ -44,7 +44,7 @@ fn test_list_notifications() {
 #[test]
 fn test_delete_notifications() {
     block_on(async {
-        let (client, mut session) = test_helpers::authenticated_client("notificationsuserid").await;
+        let (client, session) = test_helpers::authenticated_client("notificationsuserid").await;
         client
             .rpc(&session, "echo", Some("Hello World!"))
             .await
@@ -64,7 +64,7 @@ fn test_delete_notifications() {
 #[test]
 fn test_delete_all_notifications() {
     block_on(async {
-        let (client, mut session) = test_helpers::authenticated_client("notificationsuserid").await;
+        let (client, session) = test_helpers::authenticated_client("notificationsuserid").await;
 
         loop {
             let notifications = client

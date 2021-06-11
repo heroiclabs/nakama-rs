@@ -22,7 +22,7 @@ fn test_get_account() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("somedeviceid", Some("TestUser"), true, HashMap::new())
             .await?;
 
@@ -40,7 +40,7 @@ fn test_update_account() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("somedeviceid", Some("TestUser"), true, HashMap::new())
             .await?;
 

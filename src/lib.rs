@@ -24,6 +24,7 @@ pub mod matchmaker;
 pub mod session;
 pub mod socket;
 pub mod socket_adapter;
+#[cfg(feature = "test")]
 pub mod test_helpers;
 pub mod web_socket;
 pub mod web_socket_adapter;

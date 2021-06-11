@@ -23,8 +23,8 @@ fn test_session_variables() {
 
     let result = block_on(async {
         let mut vars = HashMap::new();
-        vars.insert("ident".to_owned(), "hidden".to_owned());
-        let mut session = client
+        vars.insert("ident", "hidden");
+        let session = client
             .authenticate_device("somenewdeviceid", None, true, vars)
             .await?;
 

@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! The default implementation of the Nakama [`Client`] trait.
+//!
+//! # General concepts
+//! ## Limit and cursor
+//! Many functions that list data allow to pass optional `limit` and `cursor` parameters. The first call
+//! will return up to `limit` entries. The returned struct contains a `cursor` member that can be passed to the next function call to
+//! retrieve more data.
+//!
+//! If no `limit` is specified, the default `limit` applies.
+//!
 use crate::api;
 use crate::api::{
     ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice, ApiAccountEmail,
@@ -156,6 +166,19 @@ impl<A: ClientAdapter> Error for DefaultClientError<A> {}
 impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     type Error = DefaultClientError<A>;
 
+    /// Add friends by id or username.
+    ///
+    /// Either accept a friend invite or send a friend invite to the specified users
+    /// based on their ids or usernames.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.add_friends(&session, &["friend_id"], &["friend_user_id"]).await
+    /// # });
+    /// ```
     async fn add_friends(
         &self,
         session: &Session,
@@ -168,6 +191,17 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Add users to a group.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let group = client.create_group(&session, "NewGroup", None, None, None, None, None).await?;
+    /// client.add_group_users(&session, &group.id, &["useridtoadd"]).await
+    /// # });
+    /// ```
     async fn add_group_users(
         &self,
         session: &Session,
@@ -184,6 +218,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate user with the ID `token` received from Apple.
     /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
     /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_apple("apple_token", Some("Username"), true, HashMap::new()).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_apple(
         &self,
         token: &str,
@@ -212,6 +258,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate user with a custom identifier usually obtained from an external authentication service.
     /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
     /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_custom("custom_token", Some("Username"), true, HashMap::new()).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
+    ///
     async fn authenticate_custom(
         &self,
         id: &str,
@@ -241,6 +300,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate user with a device identifier usually obtained from a platform API.
     /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
     /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_device("sufficientlylongdeviceid", Some("Username"), true, HashMap::new()).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_device(
         &self,
         id: &str,
@@ -264,6 +335,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Authenticate a user with an email and password.
+    ///
+    /// TODO: Document all
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_email("email@domain.com", "password", None, true, HashMap::new()).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_email(
         &self,
         email: &str,
@@ -289,6 +375,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Authenticate a user with a Facebook auth token
+    ///
+    /// TODO: Document all
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_facebook("facebooktoken", None, true, HashMap::new(), false).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_facebook(
         &self,
         token: &str,
@@ -314,6 +415,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Authenticate a user with Apple Game Center
+    ///
+    /// TODO: Document all
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_game_center("bundleid", "playerid", "public_key_url", "salt", "signature", "timestamp", None, true, HashMap::new()).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_game_center(
         &self,
         bundle_id: &str,
@@ -347,6 +463,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Authenticate a user with a Google auth token
+    ///
+    /// TODO: Document all
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_google("googletoken", None, true, HashMap::new(), false).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_google(
         &self,
         token: &str,
@@ -370,6 +501,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Authenticate a user with a Steam auth token
+    ///
+    /// TODO: Document all
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.authenticate_steam("steamtoken", None, true, HashMap::new(), false).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn authenticate_steam(
         &self,
         token: &str,
@@ -393,6 +539,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Ban a set of users from a group.
+    ///
+    /// See [`Self::list_group_users`] for an example on how to retrieve user ids.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let group = client.create_group(&session, "NewGroup", None, None, None, None, None).await?;
+    /// client.ban_group_users(&session, &group.id, &["userid1"]).await
+    ///     .expect("Failed to authenticate user");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn ban_group_users(
         &self,
         session: &Session,
@@ -607,6 +768,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link an Apple ID to the social profiles on the current user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_apple(&session, "appletoken").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::link_apple(
             &session.get_auth_token(),
@@ -618,6 +792,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link an custom ID to the social profiles on the current user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_custom(&session, "customtoken").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::link_custom(
             &session.get_auth_token(),
@@ -629,6 +816,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link an device ID to the social profiles on the current user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_device(&session, "usersdeviceid").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_device(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::link_device(
             &session.get_auth_token(),
@@ -640,6 +840,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link an email and password to the social profiles on the current user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_email(&session, "email@domain.com", "password").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_email(
         &self,
         session: &Session,
@@ -657,6 +870,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link a Facebook profile to the social profiles on the current user's account.
+    ///
+    /// TODO: Token
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_facebook(&session, "facebooktoken", None).await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_facebook(
         &self,
         session: &Session,
@@ -674,6 +902,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link a Game Center profile to the social profiles on the current user's account.
+    ///
+    /// TODO: All
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_game_center(&session, "bundleid", "playerid", "public_key_url", "salt", "signature", "timestamp").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_game_center(
         &self,
         session: &Session,
@@ -699,6 +942,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link a Google profile to the social profiles on the current user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_google(&session, "googletoken").await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_google(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::link_google(
             &session.get_auth_token(),
@@ -710,6 +966,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Link a Steam profile to the social profiles on the current user's account.
+    ///
+    /// TODO: Document import
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let session = client.link_steam(&session, "steamtoken", false).await
+    ///     .expect("Failed to link account");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn link_steam(
         &self,
         session: &Session,
@@ -760,6 +1031,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List all users part of the group.
+    ///
+    /// It is possible to filter users based on their state. See [Groups and Clans](https://heroiclabs.com/docs/social-groups-clans/#groups-and-clans)
+    /// for possible values.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let group = client.create_group(&session, "NewGroup", None, None, None, None, None).await?;
+    /// client.list_group_users(&session, &group.id, None, None, None).await
+    ///     .expect("Failed to list group users");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_group_users(
         &self,
         session: &Session,
@@ -774,6 +1063,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List groups on the server.
+    ///
+    /// It is possible to filter groups by name. The percentage char '%' can be used as placeholder
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// // List all groups
+    /// client.list_groups(&session, None, None, None).await
+    ///     .expect("Failed to list groups");
+    /// // Search for groups starting with "Instance1"
+    /// client.list_groups(&session, Some("Instance1%"), None, None).await
+    ///     .expect("Failed to list groups");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_groups(
         &self,
         session: &Session,
@@ -786,6 +1095,22 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List records from a leaderboard
+    ///
+    /// TODO: Document owern_ids and expiry
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.list_leaderboard_records(&session, "leaderboard_id", &[], None, None, None).await
+    ///     .expect("Failed to list leaderboard records");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_leaderboard_records(
         &self,
         session: &Session,
@@ -808,6 +1133,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List leaderboard records around owner
+    ///
+    /// TODO: Document owern_ids and expiry
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let owner_id = client.get_account(&session).await.expect("Failed to get account").user.id;
+    /// client.list_leaderboard_records_around_owner(&session, "leaderboard_id", &owner_id, None, None, None).await
+    ///     .expect("Failed to list leaderboard records around owner");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_leaderboard_records_around_owner(
         &self,
         session: &Session,
@@ -827,6 +1169,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Fetch matches active on the server
+    ///
+    /// TODO: Document min and max.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// TODO: Document label and query.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.list_matches(&session, Some(2), Some(4), None, None, "", "").await
+    ///     .expect("Failed to list matches");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_matches(
         &self,
         session: &Session,
@@ -850,6 +1210,39 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List notifications for the user.
+    ///
+    /// List notifications which were received when the user was offline. These notifications are ones which were marked "persistent"
+    /// when sent.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
+    ///
+    /// It is recommended to persist the cacheable cursor so that only notifications since the last call to
+    /// `list_notifications` are returned.
+    ///
+    /// For more information see [List notifications](https://heroiclabs.com/docs/social-in-app-notifications/#list-notifications)
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # fn store(str: String) {};
+    /// # fn restore() -> String { "".to_owned() };
+    /// # run_in_example(async move |client, session| {
+    /// // The first call
+    /// let result = client.list_notifications(&session, None, None).await
+    ///     .expect("Failed to list notifications");
+    /// store(result.cacheable_cursor);
+    /// // ... user closes the game ...
+    /// // ... user restarts the game ...
+    /// let cacheable_cursor = restore();
+    /// // Only fetch notifications since the user closed the game.
+    /// let result = client.list_notifications(&session, None, Some(&cacheable_cursor)).await
+    ///     .expect("Failed to list notifications");
+    ///
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_notifications(
         &self,
         session: &Session,
@@ -861,6 +1254,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List storage objects in a collection which have public read access.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_storage_objects(&session, "collection", None, None).await
+    ///     .expect("Failed to list storage objects");
+    /// // Print all objects
+    /// result.objects.iter().for_each(|object| {
+    ///     println!("Object[{}]: {}", object.key, object.value);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_storage_objects(
         &self,
         session: &Session,
@@ -874,6 +1285,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List tournament records around owner
+    ///
+    /// TODO: Document owner_id and expirty
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_tournament_records_around_owner(&session, "tournament", "", None, None).await
+    ///     .expect("Failed to list tournament records around owner");
+    /// // Print all records
+    /// result.records.iter().for_each(|record| {
+    ///     println!("Record[{}]: {}", record.username, record.score);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_tournament_records_around_owner(
         &self,
         session: &Session,
@@ -893,6 +1324,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List tournament records
+    ///
+    /// TODO: Document owner_id and expirty
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_tournament_records(&session, "tournament", &[], None, None, None).await
+    ///     .expect("Failed to list tournament records");
+    /// // Print all records
+    /// result.records.iter().for_each(|record| {
+    ///     println!("Record[{}]: {}", record.username, record.score);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_tournament_records(
         &self,
         session: &Session,
@@ -915,6 +1366,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List current or upcoming
+    ///
+    /// TODO: Document all
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_tournaments(&session, None, None, None, None, None, None).await
+    ///     .expect("Failed to list tournaments");
+    /// // Print all tournaments
+    /// result.tournaments.iter().for_each(|tournament| {
+    ///     println!("Tournament: {}", tournament.title);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_tournaments(
         &self,
         session: &Session,
@@ -938,6 +1409,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List the groups the current user is a member of
+    ///
+    /// TODO: Document all
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_current_user_groups(&session, None, None, None, None).await
+    ///     .expect("Failed to list current user groups");
+    /// // Print all groups
+    /// result.user_groups.iter().for_each(|group| {
+    ///     println!("Group: {}", group.group.name);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_current_user_groups(
         &self,
         _session: &Session,
@@ -948,6 +1439,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         todo!()
     }
 
+    /// List groups an user is a member of.
+    ///
+    /// TODO: Document all
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_user_groups(&session, "user_id", None, None, None, None).await
+    ///     .expect("Failed to list user groups");
+    /// // Print all groups
+    /// result.user_groups.iter().for_each(|group| {
+    ///     println!("Group: {}", group.group.name);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_user_groups(
         &self,
         session: &Session,
