@@ -640,13 +640,16 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         todo!()
     }
 
-    async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32) {
+    async fn connect(&self, session: &Session, appear_online: bool, connect_timeout: i32) {
         let ws_url = "ws://127.0.0.1";
         let port = 7350;
 
         let ws_addr = format!(
             "{}:{}/ws?lang=en&status={}&token={}",
-            ws_url, port, appear_online, session.auth_token,
+            ws_url,
+            port,
+            appear_online,
+            session.get_auth_token(),
         );
 
         let (tx, rx) = oneshot::channel();

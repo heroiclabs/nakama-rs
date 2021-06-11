@@ -21,20 +21,20 @@ fn test_list_notifications() {
     block_on(async {
         let (client, mut session) = test_helpers::authenticated_client("notificationsuserid").await;
         client
-            .rpc(&mut session, "echo", Some("Hello World!"))
+            .rpc(&session, "echo", Some("Hello World!"))
             .await
             .expect("Failed to call echo rpc");
         client
-            .rpc(&mut session, "echo", Some("Hello World Two!"))
+            .rpc(&session, "echo", Some("Hello World Two!"))
             .await
             .expect("Failed to call echo rpc");
 
         let result = client
-            .list_notifications(&mut session, Some(1), None)
+            .list_notifications(&session, Some(1), None)
             .await
             .expect("Failed to list notifications");
         let result = client
-            .list_notifications(&mut session, Some(1), Some(&result.cacheable_cursor))
+            .list_notifications(&session, Some(1), Some(&result.cacheable_cursor))
             .await;
         assert_eq!(result.is_ok(), true);
         println!("{:?}", result);
@@ -46,16 +46,16 @@ fn test_delete_notifications() {
     block_on(async {
         let (client, mut session) = test_helpers::authenticated_client("notificationsuserid").await;
         client
-            .rpc(&mut session, "echo", Some("Hello World!"))
+            .rpc(&session, "echo", Some("Hello World!"))
             .await
             .expect("Failed to call echo rpc");
         let notifications = client
-            .list_notifications(&mut session, Some(1), None)
+            .list_notifications(&session, Some(1), None)
             .await
             .expect("Failed to fetch notifications");
         let id = &notifications.notifications[0].id;
 
-        let result = client.delete_notifications(&mut session, &[id]).await;
+        let result = client.delete_notifications(&session, &[id]).await;
         assert_eq!(result.is_ok(), true);
         println!("{:?}", result);
     });
@@ -68,7 +68,7 @@ fn test_delete_all_notifications() {
 
         loop {
             let notifications = client
-                .list_notifications(&mut session, Some(5), None)
+                .list_notifications(&session, Some(5), None)
                 .await
                 .expect("Failed to fetch notifications");
 
@@ -83,7 +83,7 @@ fn test_delete_all_notifications() {
                 .collect();
 
             client
-                .delete_notifications(&mut session, ids.as_ref())
+                .delete_notifications(&session, ids.as_ref())
                 .await
                 .expect("Failed to delete notifications");
         }

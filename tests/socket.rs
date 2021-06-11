@@ -46,7 +46,7 @@ fn test_status_presence_received_after_connect() {
                 .send(presence)
                 .expect("Failed to send status presence");
         });
-        socket.connect(&mut session, true, -1).await;
+        socket.connect(&session, true, -1).await;
 
         let status_presence = rx_presence.recv().expect("Failed to recv status presence");
         println!("Status presence: {:?}", status_presence);
@@ -66,7 +66,7 @@ fn test_on_connected_triggered() {
             tx.send(()).expect("Failed to send connected status");
         });
 
-        socket.connect(&mut session, true, -1).await;
+        socket.connect(&session, true, -1).await;
     });
 
     rx.recv().expect("Failed to receive connected status");

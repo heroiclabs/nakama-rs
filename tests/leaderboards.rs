@@ -22,7 +22,7 @@ fn test_write_leaderboard_record() {
     block_on(async {
         let (client, mut session) = test_helpers::authenticated_client("leaderboardclient1").await;
         let result = client
-            .write_leaderboard_record(&mut session, "wins", 1, None, None, None)
+            .write_leaderboard_record(&session, "wins", 1, None, None, None)
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -35,7 +35,7 @@ fn test_write_leaderboard_record_subscore_and_override_operator() {
         let (client, mut session) = test_helpers::authenticated_client("leaderboardclient1").await;
         let result = client
             .write_leaderboard_record(
-                &mut session,
+                &session,
                 "wins",
                 1,
                 Some(50),
@@ -55,7 +55,7 @@ fn test_delete_leaderboard_record() {
         let (client, mut session) = test_helpers::authenticated_client("leaderboardclient1").await;
         client
             .write_leaderboard_record(
-                &mut session,
+                &session,
                 "wins",
                 1,
                 Some(50),
@@ -64,7 +64,7 @@ fn test_delete_leaderboard_record() {
             )
             .await
             .expect("Failed to write leaderboard");
-        let result = client.delete_leaderboard_record(&mut session, "wins").await;
+        let result = client.delete_leaderboard_record(&session, "wins").await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
     });
@@ -77,7 +77,7 @@ fn test_list_leaderboard_records() {
         let (_, mut session2) = test_helpers::authenticated_client("leaderboardclient2").await;
         client
             .write_leaderboard_record(
-                &mut session,
+                &session,
                 "wins",
                 1,
                 Some(50),
@@ -88,7 +88,7 @@ fn test_list_leaderboard_records() {
             .expect("Failed to write leaderboard record");
         client
             .write_leaderboard_record(
-                &mut session2,
+                &session2,
                 "wins",
                 2,
                 Some(50),
@@ -98,12 +98,12 @@ fn test_list_leaderboard_records() {
             .await
             .expect("Failed to write leaderboard record");
         let result1 = client
-            .list_leaderboard_records(&mut session, "wins", &[], None, Some(1), None)
+            .list_leaderboard_records(&session, "wins", &[], None, Some(1), None)
             .await
             .unwrap();
         let result2 = client
             .list_leaderboard_records(
-                &mut session,
+                &session,
                 "wins",
                 &[],
                 None,
@@ -126,7 +126,7 @@ fn test_list_leaderboard_records_around_owner() {
         let (_, mut session2) = test_helpers::authenticated_client("leaderboardclient2").await;
         client
             .write_leaderboard_record(
-                &mut session,
+                &session,
                 "wins",
                 1,
                 Some(50),
@@ -137,7 +137,7 @@ fn test_list_leaderboard_records_around_owner() {
             .expect("Failed to write leaderboard record");
         client
             .write_leaderboard_record(
-                &mut session2,
+                &session2,
                 "wins",
                 2,
                 Some(50),
@@ -146,9 +146,9 @@ fn test_list_leaderboard_records_around_owner() {
             )
             .await
             .expect("Failed to write leaderboard record");
-        let user_id = client.get_account(&mut session).await.unwrap().user.id;
+        let user_id = client.get_account(&session).await.unwrap().user.id;
         let result = client
-            .list_leaderboard_records_around_owner(&mut session, "wins", &user_id, None, Some(1))
+            .list_leaderboard_records_around_owner(&session, "wins", &user_id, None, Some(1))
             .await
             .unwrap();
         println!("{:?}", result);

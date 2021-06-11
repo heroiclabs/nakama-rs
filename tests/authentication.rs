@@ -71,12 +71,12 @@ fn test_authenticating_with_unknown_credentials() {
 fn test_link_email() {
     let client = DefaultClient::new_with_adapter_and_defaults();
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("usersdeviceid", None, true, HashMap::new())
             .await?;
 
         client
-            .link_email(&mut session, "test@user.com", "userspassword")
+            .link_email(&session, "test@user.com", "userspassword")
             .await?;
 
         client
@@ -98,15 +98,15 @@ fn test_link_email() {
 fn test_unlink_email() {
     let client = DefaultClient::new_with_adapter_and_defaults();
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("usersdeviceid", None, true, HashMap::new())
             .await?;
 
         client
-            .link_email(&mut session, "test@user.com", "userspassword")
+            .link_email(&session, "test@user.com", "userspassword")
             .await?;
         client
-            .unlink_email(&mut session, "test@user.com", "userspassword")
+            .unlink_email(&session, "test@user.com", "userspassword")
             .await?;
 
         client

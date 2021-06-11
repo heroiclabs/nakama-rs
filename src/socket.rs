@@ -621,7 +621,7 @@ pub trait Socket {
 
     async fn close(&self) -> Result<(), Self::Error>;
 
-    async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
+    async fn connect(&self, session: &Session, appear_online: bool, connect_timeout: i32);
 
     async fn create_match(&self) -> Result<Match, Self::Error>;
 

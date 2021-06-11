@@ -28,7 +28,7 @@ fn test_session_variables() {
             .authenticate_device("somenewdeviceid", None, true, vars)
             .await?;
 
-        client.get_account(&mut session).await
+        client.get_account(&session).await
     });
 
     println!("Result: {:?}", result);
