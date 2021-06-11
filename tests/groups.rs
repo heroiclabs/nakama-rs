@@ -25,9 +25,9 @@ fn test_create_group() {
             "friendtestuser3",
         )
         .await;
-        test_helpers::remove_group_if_exists(&client, &mut session1, "MyGroup").await;
+        test_helpers::remove_group_if_exists(&client, &session1, "MyGroup").await;
         let result = client
-            .create_group(&mut session1, "MyGroup", None, None, None, Some(true), None)
+            .create_group(&session1, "MyGroup", None, None, None, Some(true), None)
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -43,11 +43,11 @@ fn test_update_group() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "UpdateGroup").await;
-        test_helpers::remove_group_if_exists(&client, &mut session1, "AnUpdateGroup").await;
+        let group = test_helpers::re_create_group(&client, &session1, "UpdateGroup").await;
+        test_helpers::remove_group_if_exists(&client, &session1, "AnUpdateGroup").await;
         let result = client
             .update_group(
-                &mut session1,
+                &session1,
                 &group.id,
                 "AnUpdateGroup",
                 false,
@@ -57,7 +57,7 @@ fn test_update_group() {
             )
             .await;
         // TODO: Changing the name of a group to an already taken name triggers a 500 error
-        // let result = client.update_group(&mut session1, &group.id, "MyUpdateGroup", false, Some("MyDescription"), Some("https://avatar.url"), Some("en")).await;
+        // let result = client.update_group(&session1, &group.id, "MyUpdateGroup", false, Some("MyDescription"), Some("https://avatar.url"), Some("en")).await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
     });
@@ -72,12 +72,12 @@ fn test_add_group_users() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "AddGroupUsers").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
-        let account3 = client.get_account(&mut session3).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "AddGroupUsers").await;
+        let account2 = client.get_account(&session2).await.unwrap();
+        let account3 = client.get_account(&session3).await.unwrap();
         let result = client
             .add_group_users(
-                &mut session1,
+                &session1,
                 &group.id,
                 &[&account2.user.id, &account3.user.id],
             )
@@ -96,10 +96,10 @@ fn test_ban_group_users() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "BanGroupUsers").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "BanGroupUsers").await;
+        let account2 = client.get_account(&session2).await.unwrap();
         let result = client
-            .ban_group_users(&mut session1, &group.id, &[&account2.user.id])
+            .ban_group_users(&session1, &group.id, &[&account2.user.id])
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -115,8 +115,8 @@ fn test_delete_group() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "DeleteGroup").await;
-        let result = client.delete_group(&mut session1, &group.id).await;
+        let group = test_helpers::re_create_group(&client, &session1, "DeleteGroup").await;
+        let result = client.delete_group(&session1, &group.id).await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
     });
@@ -131,10 +131,10 @@ fn test_promote_group_user() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "PromoteGroupUser").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "PromoteGroupUser").await;
+        let account2 = client.get_account(&session2).await.unwrap();
         let result = client
-            .promote_group_user(&mut session1, &group.id, &[&account2.user.id])
+            .promote_group_user(&session1, &group.id, &[&account2.user.id])
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -150,14 +150,14 @@ fn test_demote_group_users() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "DemoteGroupUser").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "DemoteGroupUser").await;
+        let account2 = client.get_account(&session2).await.unwrap();
         client
-            .promote_group_user(&mut session1, &group.id, &[&account2.user.id])
+            .promote_group_user(&session1, &group.id, &[&account2.user.id])
             .await
             .unwrap();
         let result = client
-            .demote_group_users(&mut session1, &group.id, &[&account2.user.id])
+            .demote_group_users(&session1, &group.id, &[&account2.user.id])
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -173,8 +173,8 @@ fn test_join_group() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "JoinGroup").await;
-        let result = client.join_group(&mut session2, &group.id).await;
+        let group = test_helpers::re_create_group(&client, &session1, "JoinGroup").await;
+        let result = client.join_group(&session2, &group.id).await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
     });
@@ -189,11 +189,11 @@ fn test_kick_group_users() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "KickGroupUsers").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
-        client.join_group(&mut session2, &group.id).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "KickGroupUsers").await;
+        let account2 = client.get_account(&session2).await.unwrap();
+        client.join_group(&session2, &group.id).await.unwrap();
         let result = client
-            .kick_group_users(&mut session1, &group.id, &[&account2.user.id])
+            .kick_group_users(&session1, &group.id, &[&account2.user.id])
             .await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
@@ -209,9 +209,9 @@ fn test_leave_group() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "LeaveGroup").await;
-        client.join_group(&mut session2, &group.id).await.unwrap();
-        let result = client.leave_group(&mut session2, &group.id).await;
+        let group = test_helpers::re_create_group(&client, &session1, "LeaveGroup").await;
+        client.join_group(&session2, &group.id).await.unwrap();
+        let result = client.leave_group(&session2, &group.id).await;
         println!("{:?}", result);
         assert_eq!(result.is_ok(), true);
     });
@@ -226,19 +226,19 @@ fn test_list_group_users() {
             "friendtestuser3",
         )
         .await;
-        let group = test_helpers::re_create_group(&client, &mut session1, "ListGroupUsers").await;
-        let account2 = client.get_account(&mut session2).await.unwrap();
+        let group = test_helpers::re_create_group(&client, &session1, "ListGroupUsers").await;
+        let account2 = client.get_account(&session2).await.unwrap();
         client
-            .add_group_users(&mut session1, &group.id, &[&account2.user.id])
+            .add_group_users(&session1, &group.id, &[&account2.user.id])
             .await
             .expect("Failed to add group users");
 
         let users = client
-            .list_group_users(&mut session1, &group.id, None, Some(1), None)
+            .list_group_users(&session1, &group.id, None, Some(1), None)
             .await
             .unwrap();
         let users2 = client
-            .list_group_users(&mut session1, &group.id, None, Some(1), Some(&users.cursor))
+            .list_group_users(&session1, &group.id, None, Some(1), Some(&users.cursor))
             .await
             .unwrap();
         println!("{:?}", users2);
@@ -257,20 +257,15 @@ fn test_list_groups() {
         .await;
 
         // Public groups created by second user
-        test_helpers::re_create_group(&client, &mut session2, "PublicGroup1").await;
-        test_helpers::re_create_group(&client, &mut session2, "PublicGroup2").await;
+        test_helpers::re_create_group(&client, &session2, "PublicGroup1").await;
+        test_helpers::re_create_group(&client, &session2, "PublicGroup2").await;
         let groups1 = client
-            .list_groups(&mut session1, Some("Public%"), Some(1), None)
+            .list_groups(&session1, Some("Public%"), Some(1), None)
             .await
             .unwrap();
         assert_eq!(groups1.cursor.len() > 0, true);
         let groups2 = client
-            .list_groups(
-                &mut session1,
-                Some("Public%"),
-                Some(1),
-                Some(&groups1.cursor),
-            )
+            .list_groups(&session1, Some("Public%"), Some(1), Some(&groups1.cursor))
             .await;
         println!("{:?}", groups2);
         assert_eq!(groups2.is_ok(), true);
@@ -285,15 +280,15 @@ fn test_list_current_user_groups() {
     //         test_helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
     //             .await;
     //
-    //     test_helpers::re_create_group(&client, &mut session1, "ListGroups1").await;
-    //     test_helpers::re_create_group(&client, &mut session1, "ListGroups2").await;
+    //     test_helpers::re_create_group(&client, &session1, "ListGroups1").await;
+    //     test_helpers::re_create_group(&client, &session1, "ListGroups2").await;
     //     let groups1 = client
     //         .list_current_user_groups()
-    //         .list_groups(&mut session1, None, Some(1), None)
+    //         .list_groups(&session1, None, Some(1), None)
     //         .await
     //         .unwrap();
     //     let groups2 = client
-    //         .list_groups(&mut session1, None, None, Some(&groups1.cursor))
+    //         .list_groups(&session1, None, None, Some(&groups1.cursor))
     //         .await;
     //     println!("{:?}", groups2);
     //     assert_eq!(groups2.is_ok(), true);
@@ -310,16 +305,16 @@ fn test_list_user_groups() {
         )
         .await;
 
-        test_helpers::re_create_group(&client, &mut session1, "ListUserGroups").await;
-        test_helpers::re_create_group(&client, &mut session1, "ListUserGroups").await;
-        let account = client.get_account(&mut session1).await.unwrap();
+        test_helpers::re_create_group(&client, &session1, "ListUserGroups").await;
+        test_helpers::re_create_group(&client, &session1, "ListUserGroups").await;
+        let account = client.get_account(&session1).await.unwrap();
         let groups1 = client
-            .list_user_groups(&mut session1, &account.user.id, None, Some(1), None)
+            .list_user_groups(&session1, &account.user.id, None, Some(1), None)
             .await
             .unwrap();
         let groups2 = client
             .list_user_groups(
-                &mut session1,
+                &session1,
                 &account.user.id,
                 None,
                 None,

@@ -27,16 +27,16 @@ use std::thread::{sleep, spawn};
 
 pub async fn remove_group_if_exists<C: Client>(
     client: &C,
-    mut session: &mut Session,
+    mut session: &Session,
     group_name: &str,
 ) {
     let groups = client
-        .list_groups(&mut session, Some(group_name), None, None)
+        .list_groups(&session, Some(group_name), None, None)
         .await;
     if let Ok(groups) = groups {
         if groups.groups.len() > 0 {
             client
-                .delete_group(&mut session, &groups.groups[0].id)
+                .delete_group(&session, &groups.groups[0].id)
                 .await
                 .unwrap();
         }
@@ -45,12 +45,12 @@ pub async fn remove_group_if_exists<C: Client>(
 
 pub async fn re_create_group<C: Client>(
     client: &C,
-    mut session: &mut Session,
+    mut session: &Session,
     group_name: &str,
 ) -> ApiGroup {
-    remove_group_if_exists(client, &mut session, group_name).await;
+    remove_group_if_exists(client, &session, group_name).await;
     client
-        .create_group(&mut session, group_name, None, None, None, Some(true), None)
+        .create_group(&session, group_name, None, None, None, Some(true), None)
         .await
         .unwrap()
 }
@@ -111,11 +111,11 @@ pub async fn sockets_with_users(
         .await
         .unwrap();
 
-    let account1 = client.get_account(&mut session).await.unwrap();
-    let account2 = client.get_account(&mut session2).await.unwrap();
+    let account1 = client.get_account(&session).await.unwrap();
+    let account2 = client.get_account(&session2).await.unwrap();
 
-    socket.connect(&mut session, true, -1).await;
-    socket2.connect(&mut session2, true, -1).await;
+    socket.connect(&session, true, -1).await;
+    socket2.connect(&session2, true, -1).await;
 
     (socket, socket2, account1, account2)
 }

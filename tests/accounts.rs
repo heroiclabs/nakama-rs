@@ -26,7 +26,7 @@ fn test_get_account() {
             .authenticate_device("somedeviceid", Some("TestUser"), true, HashMap::new())
             .await?;
 
-        client.get_account(&mut session).await
+        client.get_account(&session).await
     });
 
     println!("Result: {:?}", result);
@@ -46,7 +46,7 @@ fn test_update_account() {
 
         client
             .update_account(
-                &mut session,
+                &session,
                 "TestUser",
                 Some("DisplayName"),
                 Some("url://avatar"),
@@ -56,7 +56,7 @@ fn test_update_account() {
             )
             .await?;
 
-        client.get_account(&mut session).await
+        client.get_account(&session).await
     });
 
     println!("Result: {:?}", result);

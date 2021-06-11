@@ -91,23 +91,15 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
     }
 
     fn map_session(api_session: ApiSession) -> Session {
-        println!("{:?}", api_session);
-        Session {
-            auth_token: api_session.token,
-            refresh_token: if api_session.refresh_token.len() == 0 {
-                None
-            } else {
-                Some(api_session.refresh_token)
-            },
-        }
+        Session::new(&api_session.token, &api_session.refresh_token)
     }
 
     async fn _refresh_session(
         &self,
-        session: &mut Session,
+        session: &Session,
     ) -> Result<(), <DefaultClient<A> as Client>::Error> {
         // TODO: check expiration
-        if let Some(refresh_token) = session.refresh_token.take() {
+        if let Some(refresh_token) = session.get_refresh_token().take() {
             let request = api::session_refresh(
                 &self.server_key,
                 &self.server_password,
@@ -119,12 +111,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
 
             let sess = self.send(request).await;
             let result = sess.map(|s| {
-                session.auth_token = s.token;
-                session.refresh_token = if s.refresh_token.len() == 0 {
-                    None
-                } else {
-                    Some(s.refresh_token)
-                };
+                session.replace(&s.token, &s.refresh_token);
             });
             return result;
         }
@@ -171,24 +158,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn add_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let usernames = str_slice_to_owned(usernames);
-        let request = api::add_friends(&session.auth_token, &ids, &usernames);
+        let request = api::add_friends(&session.get_auth_token(), &ids, &usernames);
         self.send(request).await
     }
 
     async fn add_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
-        let request = api::add_group_users(&session.auth_token, group_id, &ids);
+        let request = api::add_group_users(&session.get_auth_token(), group_id, &ids);
         self.send(request).await
     }
 
@@ -408,32 +395,32 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn ban_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         user_ids: &[&str],
     ) -> Result<(), Self::Error> {
         let user_ids = str_slice_to_owned(user_ids);
-        let request = api::ban_group_users(&session.auth_token, group_id, &user_ids);
+        let request = api::ban_group_users(&session.get_auth_token(), group_id, &user_ids);
 
         self.send(request).await
     }
 
     async fn block_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let usernames = str_slice_to_owned(usernames);
-        let request = api::block_friends(&session.auth_token, &ids, &usernames);
+        let request = api::block_friends(&session.get_auth_token(), &ids, &usernames);
 
         self.send(request).await
     }
 
     async fn create_group(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: &str,
         description: Option<&str>,
         avatar_url: Option<&str>,
@@ -442,7 +429,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         max_count: Option<i32>,
     ) -> Result<ApiGroup, Self::Error> {
         let request = api::create_group(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiCreateGroupRequest {
                 avatar_url: avatar_url.map_or("".to_owned(), |url| url.to_owned()),
                 description: description
@@ -459,48 +446,48 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn delete_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let usernames = str_slice_to_owned(usernames);
-        let request = api::delete_friends(&session.auth_token, &ids, &usernames);
+        let request = api::delete_friends(&session.get_auth_token(), &ids, &usernames);
 
         self.send(request).await
     }
 
-    async fn delete_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error> {
-        let request = api::delete_group(&session.auth_token, group_id);
+    async fn delete_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
+        let request = api::delete_group(&session.get_auth_token(), group_id);
         self.send(request).await
     }
 
     async fn delete_leaderboard_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
     ) -> Result<(), Self::Error> {
-        let request = api::delete_leaderboard_record(&session.auth_token, leaderboard_id);
+        let request = api::delete_leaderboard_record(&session.get_auth_token(), leaderboard_id);
         self.send(request).await
     }
 
     async fn delete_notifications(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
-        let request = api::delete_notifications(&session.auth_token, &ids);
+        let request = api::delete_notifications(&session.get_auth_token(), &ids);
         self.send(request).await
     }
 
     async fn delete_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[ApiDeleteStorageObjectId],
     ) -> Result<(), Self::Error> {
         let request = api::delete_storage_objects(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiDeleteStorageObjectsRequest {
                 object_ids: ids.to_vec(),
             },
@@ -510,23 +497,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn demote_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         user_ids: &[&str],
     ) -> Result<(), Self::Error> {
         let user_ids = str_slice_to_owned(user_ids);
-        let request = api::demote_group_users(&session.auth_token, group_id, &user_ids);
+        let request = api::demote_group_users(&session.get_auth_token(), group_id, &user_ids);
         self.send(request).await
     }
 
     async fn event(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: &str,
         properties: HashMap<&str, &str>,
     ) -> Result<(), Self::Error> {
         let request = api::event(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiEvent {
                 name: name.to_owned(),
                 timestamp: "".to_owned(),
@@ -537,14 +524,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error> {
-        let request = api::get_account(&session.auth_token);
+    async fn get_account(&self, session: &Session) -> Result<ApiAccount, Self::Error> {
+        let request = api::get_account(&session.get_auth_token());
         self.send(request).await
     }
 
     async fn get_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
         facebook_ids: &[&str],
@@ -552,18 +539,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let ids = str_slice_to_owned(ids);
         let usernames = str_slice_to_owned(usernames);
         let facebook_ids = str_slice_to_owned(facebook_ids);
-        let request = api::get_users(&session.auth_token, &ids, &usernames, &facebook_ids);
+        let request = api::get_users(&session.get_auth_token(), &ids, &usernames, &facebook_ids);
         self.send(request).await
     }
 
     async fn import_facebook_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         reset: Option<bool>,
     ) -> Result<(), Self::Error> {
         let request = api::import_facebook_friends(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountFacebook {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -575,12 +562,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn import_steam_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         reset: Option<bool>,
     ) -> Result<(), Self::Error> {
         let request = api::import_steam_friends(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountSteam {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -590,39 +577,39 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn join_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error> {
-        let request = api::join_group(&session.auth_token, group_id);
+    async fn join_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
+        let request = api::join_group(&session.get_auth_token(), group_id);
         self.send(request).await
     }
 
     async fn join_tournament(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
     ) -> Result<(), Self::Error> {
-        let request = api::join_tournament(&session.auth_token, tournament_id);
+        let request = api::join_tournament(&session.get_auth_token(), tournament_id);
         self.send(request).await
     }
 
     async fn kick_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
-        let request = api::kick_group_users(&session.auth_token, group_id, &ids);
+        let request = api::kick_group_users(&session.get_auth_token(), group_id, &ids);
         self.send(request).await
     }
 
-    async fn leave_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error> {
-        let request = api::leave_group(&session.auth_token, group_id);
+    async fn leave_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
+        let request = api::leave_group(&session.get_auth_token(), group_id);
         self.send(request).await
     }
 
-    async fn link_apple(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn link_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::link_apple(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountApple {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -631,9 +618,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn link_custom(&self, session: &mut Session, id: &str) -> Result<(), Self::Error> {
+    async fn link_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::link_custom(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountCustom {
                 vars: HashMap::new(),
                 id: id.to_owned(),
@@ -642,9 +629,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn link_device(&self, session: &mut Session, id: &str) -> Result<(), Self::Error> {
+    async fn link_device(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::link_device(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountDevice {
                 vars: HashMap::new(),
                 id: id.to_owned(),
@@ -655,12 +642,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn link_email(
         &self,
-        session: &mut Session,
+        session: &Session,
         email: &str,
         password: &str,
     ) -> Result<(), Self::Error> {
         let request = api::link_email(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountEmail {
                 vars: HashMap::new(),
                 email: email.to_owned(),
@@ -672,12 +659,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn link_facebook(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         import: Option<bool>,
     ) -> Result<(), Self::Error> {
         let request = api::link_facebook(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountFacebook {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -689,7 +676,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn link_game_center(
         &self,
-        session: &mut Session,
+        session: &Session,
         bundle_id: &str,
         player_id: &str,
         public_key_url: &str,
@@ -698,7 +685,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         timestamp: &str,
     ) -> Result<(), Self::Error> {
         let request = api::link_game_center(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountGameCenter {
                 vars: HashMap::new(),
                 bundle_id: bundle_id.to_owned(),
@@ -712,9 +699,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn link_google(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn link_google(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::link_google(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountGoogle {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -725,12 +712,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn link_steam(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         import: bool,
     ) -> Result<(), Self::Error> {
         let request = api::link_steam(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiLinkSteamRequest {
                 account: ApiAccountSteam {
                     vars: HashMap::new(),
@@ -744,58 +731,64 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_channel_messages(
         &self,
-        session: &mut Session,
+        session: &Session,
         channel_id: &str,
         limit: Option<i32>,
         forward: Option<bool>,
         cursor: Option<&str>,
     ) -> Result<ApiChannelMessageList, Self::Error> {
-        let request =
-            api::list_channel_messages(&session.auth_token, channel_id, limit, forward, cursor);
+        let request = api::list_channel_messages(
+            &session.get_auth_token(),
+            channel_id,
+            limit,
+            forward,
+            cursor,
+        );
 
         self.send(request).await
     }
 
     async fn list_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         state: Option<i32>,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiFriendList, Self::Error> {
-        let request = api::list_friends(&session.auth_token, limit, state, cursor);
+        let request = api::list_friends(&session.get_auth_token(), limit, state, cursor);
 
         self.send(request).await
     }
 
     async fn list_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         state: Option<i32>,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiGroupUserList, Self::Error> {
-        let request = api::list_group_users(&session.auth_token, group_id, limit, state, cursor);
+        let request =
+            api::list_group_users(&session.get_auth_token(), group_id, limit, state, cursor);
 
         self.send(request).await
     }
 
     async fn list_groups(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: Option<&str>,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiGroupList, Self::Error> {
-        let request = api::list_groups(&session.auth_token, name, cursor, limit);
+        let request = api::list_groups(&session.get_auth_token(), name, cursor, limit);
 
         self.send(request).await
     }
 
     async fn list_leaderboard_records(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         owner_ids: &[&str],
         expiry: Option<&str>,
@@ -804,7 +797,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiLeaderboardRecordList, Self::Error> {
         let owner_ids = str_slice_to_owned(owner_ids);
         let request = api::list_leaderboard_records(
-            &session.auth_token,
+            &session.get_auth_token(),
             leaderboard_id,
             &owner_ids,
             limit,
@@ -817,14 +810,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_leaderboard_records_around_owner(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         owner_id: &str,
         expiry: Option<&str>,
         limit: Option<i32>,
     ) -> Result<ApiLeaderboardRecordList, Self::Error> {
         let request = api::list_leaderboard_records_around_owner(
-            &session.auth_token,
+            &session.get_auth_token(),
             leaderboard_id,
             owner_id,
             limit,
@@ -836,7 +829,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_matches(
         &self,
-        session: &mut Session,
+        session: &Session,
         min: Option<i32>,
         max: Option<i32>,
         limit: Option<i32>,
@@ -845,7 +838,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         query: &str,
     ) -> Result<ApiMatchList, Self::Error> {
         let request = api::list_matches(
-            &session.auth_token,
+            &session.get_auth_token(),
             limit,
             authoritative,
             Some(label),
@@ -859,38 +852,38 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_notifications(
         &self,
-        session: &mut Session,
+        session: &Session,
         limit: Option<i32>,
         cacheable_cursor: Option<&str>,
     ) -> Result<ApiNotificationList, Self::Error> {
-        let request = api::list_notifications(&session.auth_token, limit, cacheable_cursor);
+        let request = api::list_notifications(&session.get_auth_token(), limit, cacheable_cursor);
 
         self.send(request).await
     }
 
     async fn list_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         collection: &str,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiStorageObjectList, Self::Error> {
         let request =
-            api::list_storage_objects(&session.auth_token, collection, None, limit, cursor);
+            api::list_storage_objects(&session.get_auth_token(), collection, None, limit, cursor);
 
         self.send(request).await
     }
 
     async fn list_tournament_records_around_owner(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         owner_id: &str,
         expiry: Option<&str>,
         limit: Option<i32>,
     ) -> Result<ApiTournamentRecordList, Self::Error> {
         let request = api::list_tournament_records_around_owner(
-            &session.auth_token,
+            &session.get_auth_token(),
             tournament_id,
             owner_id,
             limit,
@@ -902,7 +895,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_tournament_records(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         owner_ids: &[&str],
         expiry: Option<&str>,
@@ -911,7 +904,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiTournamentRecordList, Self::Error> {
         let owner_ids = str_slice_to_owned(owner_ids);
         let request = api::list_tournament_records(
-            &session.auth_token,
+            &session.get_auth_token(),
             tournament_id,
             &owner_ids,
             limit,
@@ -924,7 +917,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_tournaments(
         &self,
-        session: &mut Session,
+        session: &Session,
         category_start: Option<i32>,
         category_end: Option<i32>,
         start_time: Option<i32>,
@@ -933,7 +926,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         cursor: Option<&str>,
     ) -> Result<ApiTournamentList, Self::Error> {
         let request = api::list_tournaments(
-            &session.auth_token,
+            &session.get_auth_token(),
             category_start,
             category_end,
             start_time,
@@ -947,7 +940,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_current_user_groups(
         &self,
-        _session: &mut Session,
+        _session: &Session,
         _state: Option<i32>,
         _limit: Option<i32>,
         _cursor: Option<&str>,
@@ -957,27 +950,28 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_user_groups(
         &self,
-        session: &mut Session,
+        session: &Session,
         user_id: &str,
         state: Option<i32>,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiUserGroupList, Self::Error> {
-        let request = api::list_user_groups(&session.auth_token, user_id, limit, state, cursor);
+        let request =
+            api::list_user_groups(&session.get_auth_token(), user_id, limit, state, cursor);
 
         self.send(request).await
     }
 
     async fn list_users_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         collection: &str,
         user_id: &str,
         limit: Option<i32>,
         cursor: Option<&str>,
     ) -> Result<ApiStorageObjectList, Self::Error> {
         let request = api::list_storage_objects(
-            &session.auth_token,
+            &session.get_auth_token(),
             collection,
             Some(user_id),
             limit,
@@ -989,24 +983,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn promote_group_user(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
-        let request = api::promote_group_users(&session.auth_token, group_id, &ids);
+        let request = api::promote_group_users(&session.get_auth_token(), group_id, &ids);
 
         self.send(request).await
     }
 
     async fn read_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[ApiReadStorageObjectId],
     ) -> Result<ApiStorageObjects, Self::Error> {
         let ids = ids.to_vec();
         let request = api::read_storage_objects(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiReadStorageObjectsRequest { object_ids: ids },
         );
 
@@ -1015,21 +1009,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn rpc(
         &self,
-        session: &mut Session,
+        session: &Session,
         id: &str,
         payload: Option<&str>,
     ) -> Result<ApiRpc, Self::Error> {
-        let request = api::rpc_func2(&session.auth_token, id, payload, None);
+        let request = api::rpc_func2(&session.get_auth_token(), id, payload, None);
 
         self.send(request).await
     }
 
-    async fn session_logout(&self, session: &mut Session) -> Result<(), Self::Error> {
+    async fn session_logout(&self, session: &Session) -> Result<(), Self::Error> {
         let request = api::session_logout(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiSessionLogoutRequest {
-                token: session.auth_token.clone(),
-                refresh_token: session.refresh_token.clone().unwrap_or("".to_owned()),
+                token: session.get_auth_token(),
+                refresh_token: session.get_refresh_token().unwrap_or("".to_owned()),
             },
         );
 
@@ -1038,14 +1032,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn session_refresh(
         &self,
-        session: &mut Session,
+        session: &Session,
         vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error> {
         let request = api::session_refresh(
             &self.server_key,
             &self.server_password,
             ApiSessionRefreshRequest {
-                token: session.auth_token.clone(),
+                token: session.get_auth_token().clone(),
                 vars: string_map_to_owned_string_map(vars),
             },
         );
@@ -1055,9 +1049,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
-    async fn unlink_apple(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn unlink_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_apple(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountApple {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -1067,9 +1061,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn unlink_custom(&self, session: &mut Session, id: &str) -> Result<(), Self::Error> {
+    async fn unlink_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::unlink_custom(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountCustom {
                 vars: HashMap::new(),
                 id: id.to_owned(),
@@ -1079,9 +1073,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn unlink_device(&self, session: &mut Session, id: &str) -> Result<(), Self::Error> {
+    async fn unlink_device(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::unlink_device(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountDevice {
                 vars: HashMap::new(),
                 id: id.to_owned(),
@@ -1093,12 +1087,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn unlink_email(
         &self,
-        session: &mut Session,
+        session: &Session,
         email: &str,
         password: &str,
     ) -> Result<(), Self::Error> {
         let request = api::unlink_email(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountEmail {
                 vars: HashMap::new(),
                 email: email.to_owned(),
@@ -1109,9 +1103,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn unlink_facebook(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn unlink_facebook(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_facebook(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountFacebook {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -1123,7 +1117,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn unlink_game_center(
         &self,
-        session: &mut Session,
+        session: &Session,
         bundle_id: &str,
         player_id: &str,
         public_key_url: &str,
@@ -1132,7 +1126,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         timestamp: &str,
     ) -> Result<(), Self::Error> {
         let request = api::unlink_game_center(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountGameCenter {
                 vars: HashMap::new(),
                 bundle_id: bundle_id.to_owned(),
@@ -1147,9 +1141,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn unlink_google(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn unlink_google(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_google(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountGoogle {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -1159,9 +1153,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    async fn unlink_steam(&self, session: &mut Session, token: &str) -> Result<(), Self::Error> {
+    async fn unlink_steam(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_steam(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiAccountSteam {
                 vars: HashMap::new(),
                 token: token.to_owned(),
@@ -1173,7 +1167,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn update_account(
         &self,
-        session: &mut Session,
+        session: &Session,
         username: &str,
         display_name: Option<&str>,
         avatar_url: Option<&str>,
@@ -1182,7 +1176,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         timezone: Option<&str>,
     ) -> Result<(), Self::Error> {
         let request = api::update_account(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiUpdateAccountRequest {
                 avatar_url: avatar_url.map_or("".to_owned(), |url| url.to_owned()),
                 lang_tag: lang_tag.map_or("".to_owned(), |lang_tag| lang_tag.to_owned()),
@@ -1199,7 +1193,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn update_group(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         name: &str,
         open: bool,
@@ -1208,7 +1202,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         lang_tag: Option<&str>,
     ) -> Result<(), Self::Error> {
         let request = api::update_group(
-            &session.auth_token,
+            &session.get_auth_token(),
             group_id,
             ApiUpdateGroupRequest {
                 avatar_url: avatar_url.map_or("".to_owned(), |url| url.to_owned()),
@@ -1226,11 +1220,11 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn validate_purchase_apple(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error> {
         let request = api::validate_purchase_apple(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiValidatePurchaseAppleRequest {
                 receipt: receipt.to_string(),
             },
@@ -1241,11 +1235,11 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn validate_purchase_google(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error> {
         let request = api::validate_purchase_google(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiValidatePurchaseGoogleRequest {
                 purchase: receipt.to_string(),
             },
@@ -1256,12 +1250,12 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn validate_purchase_huawei(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
         signature: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error> {
         let request = api::validate_purchase_huawei(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiValidatePurchaseHuaweiRequest {
                 purchase: receipt.to_owned(),
                 signature: signature.to_owned(),
@@ -1273,7 +1267,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn write_leaderboard_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         score: i64,
         sub_score: Option<i64>,
@@ -1282,7 +1276,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
         let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
         let request = api::write_leaderboard_record(
-            &session.auth_token,
+            &session.get_auth_token(),
             leaderboard_id,
             WriteLeaderboardRecordRequestLeaderboardRecordWrite {
                 metadata: metadata.unwrap_or("").to_owned(),
@@ -1299,11 +1293,11 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn write_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         objects: &[ApiWriteStorageObject],
     ) -> Result<ApiStorageObjectAcks, Self::Error> {
         let request = api::write_storage_objects(
-            &session.auth_token,
+            &session.get_auth_token(),
             ApiWriteStorageObjectsRequest {
                 objects: objects.to_vec(),
             },
@@ -1314,7 +1308,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn write_tournament_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         score: i64,
         sub_score: Option<i64>,
@@ -1323,7 +1317,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
         let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
         let request = api::write_tournament_record(
-            &session.auth_token,
+            &session.get_auth_token(),
             tournament_id,
             WriteTournamentRecordRequestTournamentRecordWrite {
                 metadata: metadata.map(|str| str.to_owned()),

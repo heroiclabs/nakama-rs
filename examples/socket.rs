@@ -41,7 +41,7 @@ fn main() {
                 .expect("Failed to send status presence");
         });
 
-        socket.connect(&mut session, true, -1).await;
+        socket.connect(&session, true, -1).await;
 
         let status_presence = rx_presence
             .recv()

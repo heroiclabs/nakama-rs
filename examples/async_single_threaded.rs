@@ -74,8 +74,8 @@ fn main() {
                             .await;
                         let mut session = session.unwrap();
                         let mut session2 = session2.unwrap();
-                        web_socket.connect(&mut session, true, -1).await;
-                        web_socket2.connect(&mut session2, true, -1).await;
+                        web_socket.connect(&session, true, -1).await;
+                        web_socket2.connect(&session2, true, -1).await;
                         state.replace(Connected);
                     }
                     JoiningChat => {

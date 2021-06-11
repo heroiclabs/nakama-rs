@@ -12,8 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug)]
+use std::sync::{Arc, Mutex};
+
+#[derive(Debug, Clone)]
 pub struct Session {
-    pub auth_token: String,
-    pub refresh_token: Option<String>,
+    inner: Arc<Mutex<Inner>>,
+}
+
+#[derive(Debug)]
+struct Inner {
+    auth_token: String,
+    refresh_token: Option<String>,
+}
+
+impl Session {
+    pub fn new(auth_token: &str, refresh_token: &str) -> Session {
+        Session {
+            inner: Arc::new(Mutex::new(Inner {
+                auth_token: auth_token.to_owned(),
+                refresh_token: if refresh_token.len() == 0 {
+                    None
+                } else {
+                    Some(refresh_token.to_owned())
+                },
+            })),
+        }
+    }
+
+    pub fn replace(&self, auth_token: &str, refresh_token: &str) {
+        let mut inner = self.inner.lock().unwrap();
+        inner.auth_token = auth_token.to_owned();
+        inner.refresh_token = if refresh_token.len() == 0 {
+            None
+        } else {
+            Some(refresh_token.to_owned())
+        };
+    }
+
+    pub fn get_auth_token(&self) -> String {
+        self.inner.lock().unwrap().auth_token.clone()
+    }
+
+    pub fn get_refresh_token(&self) -> Option<String> {
+        self.inner.lock().unwrap().refresh_token.clone()
+    }
 }

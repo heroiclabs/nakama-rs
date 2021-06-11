@@ -31,14 +31,14 @@ pub trait Client {
 
     async fn add_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn add_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error>;
@@ -116,21 +116,21 @@ pub trait Client {
 
     async fn ban_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         user_ids: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn block_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn create_group(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: &str,
         description: Option<&str>,
         avatar_url: Option<&str>,
@@ -141,50 +141,50 @@ pub trait Client {
 
     async fn delete_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
     ) -> Result<(), Self::Error>;
 
-    async fn delete_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error>;
+    async fn delete_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error>;
 
     async fn delete_leaderboard_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
     ) -> Result<(), Self::Error>;
 
     async fn delete_notifications(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn delete_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[ApiDeleteStorageObjectId],
     ) -> Result<(), Self::Error>;
 
     async fn demote_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         user_ids: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn event(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: &str,
         properties: HashMap<&str, &str>,
     ) -> Result<(), Self::Error>;
 
-    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error>;
+    async fn get_account(&self, session: &Session) -> Result<ApiAccount, Self::Error>;
 
     async fn get_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[&str],
         usernames: &[&str],
         facebook_ids: &[&str],
@@ -192,58 +192,58 @@ pub trait Client {
 
     async fn import_facebook_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         reset: Option<bool>,
     ) -> Result<(), Self::Error>;
 
     async fn import_steam_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         reset: Option<bool>,
     ) -> Result<(), Self::Error>;
 
-    async fn join_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error>;
+    async fn join_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error>;
 
     async fn join_tournament(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
     ) -> Result<(), Self::Error>;
 
     async fn kick_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error>;
 
-    async fn leave_group(&self, session: &mut Session, group_id: &str) -> Result<(), Self::Error>;
+    async fn leave_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error>;
 
-    async fn link_apple(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn link_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
-    async fn link_custom(&self, session: &mut Session, id: &str) -> Result<(), Self::Error>;
+    async fn link_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error>;
 
-    async fn link_device(&self, session: &mut Session, id: &str) -> Result<(), Self::Error>;
+    async fn link_device(&self, session: &Session, id: &str) -> Result<(), Self::Error>;
 
     async fn link_email(
         &self,
-        session: &mut Session,
+        session: &Session,
         email: &str,
         password: &str,
     ) -> Result<(), Self::Error>;
 
     async fn link_facebook(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         import: Option<bool>,
     ) -> Result<(), Self::Error>;
 
     async fn link_game_center(
         &self,
-        session: &mut Session,
+        session: &Session,
         bundle_id: &str,
         player_id: &str,
         public_key_url: &str,
@@ -252,18 +252,18 @@ pub trait Client {
         timestamp: &str,
     ) -> Result<(), Self::Error>;
 
-    async fn link_google(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn link_google(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
     async fn link_steam(
         &self,
-        session: &mut Session,
+        session: &Session,
         token: &str,
         import: bool,
     ) -> Result<(), Self::Error>;
 
     async fn list_channel_messages(
         &self,
-        session: &mut Session,
+        session: &Session,
         channel_id: &str,
         limit: Option<i32>,
         forward: Option<bool>,
@@ -272,7 +272,7 @@ pub trait Client {
 
     async fn list_friends(
         &self,
-        session: &mut Session,
+        session: &Session,
         state: Option<i32>,
         limit: Option<i32>,
         cursor: Option<&str>,
@@ -280,7 +280,7 @@ pub trait Client {
 
     async fn list_group_users(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         state: Option<i32>,
         limit: Option<i32>,
@@ -289,7 +289,7 @@ pub trait Client {
 
     async fn list_groups(
         &self,
-        session: &mut Session,
+        session: &Session,
         name: Option<&str>,
         limit: Option<i32>,
         cursor: Option<&str>,
@@ -297,7 +297,7 @@ pub trait Client {
 
     async fn list_leaderboard_records(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         owner_ids: &[&str],
         expiry: Option<&str>,
@@ -307,7 +307,7 @@ pub trait Client {
 
     async fn list_leaderboard_records_around_owner(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         owner_id: &str,
         expiry: Option<&str>,
@@ -316,7 +316,7 @@ pub trait Client {
 
     async fn list_matches(
         &self,
-        session: &mut Session,
+        session: &Session,
         min: Option<i32>,
         max: Option<i32>,
         limit: Option<i32>,
@@ -327,14 +327,14 @@ pub trait Client {
 
     async fn list_notifications(
         &self,
-        session: &mut Session,
+        session: &Session,
         limit: Option<i32>,
         cacheable_cursor: Option<&str>,
     ) -> Result<ApiNotificationList, Self::Error>;
 
     async fn list_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         collection: &str,
         limit: Option<i32>,
         cursor: Option<&str>,
@@ -342,7 +342,7 @@ pub trait Client {
 
     async fn list_tournament_records_around_owner(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         owner_id: &str,
         expiry: Option<&str>,
@@ -351,7 +351,7 @@ pub trait Client {
 
     async fn list_tournament_records(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         owner_ids: &[&str],
         expiry: Option<&str>,
@@ -361,7 +361,7 @@ pub trait Client {
 
     async fn list_tournaments(
         &self,
-        session: &mut Session,
+        session: &Session,
         category_start: Option<i32>,
         category_end: Option<i32>,
         start_time: Option<i32>,
@@ -372,7 +372,7 @@ pub trait Client {
 
     async fn list_current_user_groups(
         &self,
-        session: &mut Session,
+        session: &Session,
         state: Option<i32>,
         limit: Option<i32>,
         cursor: Option<&str>,
@@ -380,7 +380,7 @@ pub trait Client {
 
     async fn list_user_groups(
         &self,
-        session: &mut Session,
+        session: &Session,
         user_id: &str,
         state: Option<i32>,
         limit: Option<i32>,
@@ -389,7 +389,7 @@ pub trait Client {
 
     async fn list_users_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         collection: &str,
         user_id: &str,
         limit: Option<i32>,
@@ -398,50 +398,50 @@ pub trait Client {
 
     async fn promote_group_user(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         ids: &[&str],
     ) -> Result<(), Self::Error>;
 
     async fn read_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         ids: &[ApiReadStorageObjectId],
     ) -> Result<ApiStorageObjects, Self::Error>;
 
     async fn rpc(
         &self,
-        session: &mut Session,
+        session: &Session,
         id: &str,
         payload: Option<&str>,
     ) -> Result<ApiRpc, Self::Error>;
 
-    async fn session_logout(&self, session: &mut Session) -> Result<(), Self::Error>;
+    async fn session_logout(&self, session: &Session) -> Result<(), Self::Error>;
 
     async fn session_refresh(
         &self,
-        session: &mut Session,
+        session: &Session,
         vars: HashMap<&str, &str>,
     ) -> Result<Session, Self::Error>;
 
-    async fn unlink_apple(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn unlink_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
-    async fn unlink_custom(&self, session: &mut Session, id: &str) -> Result<(), Self::Error>;
+    async fn unlink_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error>;
 
-    async fn unlink_device(&self, session: &mut Session, id: &str) -> Result<(), Self::Error>;
+    async fn unlink_device(&self, session: &Session, id: &str) -> Result<(), Self::Error>;
 
     async fn unlink_email(
         &self,
-        session: &mut Session,
+        session: &Session,
         email: &str,
         password: &str,
     ) -> Result<(), Self::Error>;
 
-    async fn unlink_facebook(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn unlink_facebook(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
     async fn unlink_game_center(
         &self,
-        session: &mut Session,
+        session: &Session,
         bundle_id: &str,
         player_id: &str,
         public_key_url: &str,
@@ -450,13 +450,13 @@ pub trait Client {
         timestamp: &str,
     ) -> Result<(), Self::Error>;
 
-    async fn unlink_google(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn unlink_google(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
-    async fn unlink_steam(&self, session: &mut Session, token: &str) -> Result<(), Self::Error>;
+    async fn unlink_steam(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 
     async fn update_account(
         &self,
-        session: &mut Session,
+        session: &Session,
         username: &str,
         display_name: Option<&str>,
         avatar_url: Option<&str>,
@@ -467,7 +467,7 @@ pub trait Client {
 
     async fn update_group(
         &self,
-        session: &mut Session,
+        session: &Session,
         group_id: &str,
         name: &str,
         open: bool,
@@ -478,26 +478,26 @@ pub trait Client {
 
     async fn validate_purchase_apple(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error>;
 
     async fn validate_purchase_google(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error>;
 
     async fn validate_purchase_huawei(
         &self,
-        session: &mut Session,
+        session: &Session,
         receipt: &str,
         signature: &str,
     ) -> Result<ApiValidatePurchaseResponse, Self::Error>;
 
     async fn write_leaderboard_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         leaderboard_id: &str,
         score: i64,
         sub_score: Option<i64>,
@@ -507,13 +507,13 @@ pub trait Client {
 
     async fn write_storage_objects(
         &self,
-        session: &mut Session,
+        session: &Session,
         objects: &[ApiWriteStorageObject],
     ) -> Result<ApiStorageObjectAcks, Self::Error>;
 
     async fn write_tournament_record(
         &self,
-        session: &mut Session,
+        session: &Session,
         tournament_id: &str,
         score: i64,
         sub_score: Option<i64>,
