@@ -734,7 +734,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # run_in_example(async move |client, session| {
     /// // Delete 10 objects from the "collection1" collection.
     /// let mut objects = client.list_storage_objects(&session, "collection1", Some(10), None).await.expect("Failed to list object");
-    /// let delete_objects = objects.objects.drain(..).map(|object|
+    /// let delete_objects: Vec<ApiDeleteStorageObjectId> = objects.objects.drain(..).map(|object|
     ///     ApiDeleteStorageObjectId {
     ///         collection: object.collection,
     ///         key: object.key,
@@ -795,7 +795,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # run_in_example(async move |client, session| {
     /// let properties = [("name1", "value1"), ("name2", "value2")].iter().cloned().collect();
-    /// client.demote_group_users(&session, "eventname", properties).await
+    /// client.event(&session, "eventname", properties).await
     ///     .expect("Failed to submit event");
     /// # Ok(())
     /// # })
@@ -2396,6 +2396,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # #![feature(async_closure)]
     /// # use nakama_rs::test_helpers::*;
     /// # use nakama_rs::api::ApiWriteStorageObject;
+    /// use nanoserde::SerJson;
     /// #[derive(SerJson)]
     /// struct Card {
     ///     name: String,
