@@ -53,6 +53,7 @@ pub fn run_in_socket_example<
 ) {
     let client = DefaultClient::new_with_adapter_and_defaults();
     let socket = WebSocket::new_with_adapter();
+    tick_socket(&socket);
     block_on(async {
         let session = client
             .authenticate_device("exampletestid", None, true, HashMap::new())

@@ -673,8 +673,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # use std::collections::HashMap;
     /// # run_in_socket_example(async move |client, session, socket| {
-    /// socket.connect(&session, true, -1).await
-    ///     .expect("Failed to connect socket");
+    /// socket.connect(&session, true, -1).await;
     /// # Ok(())
     /// # });
     /// ```
@@ -798,7 +797,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// # run_in_socket_example(async move |client, session, socket| {
     /// let chat = socket.join_chat("RoomName", 1, false, false).await
     ///     .expect("Failed join chat");
-    /// println("Joined chat: {}", chat.room_name);
+    /// println!("Joined chat: {}", chat.room_name);
     /// # Ok(())
     /// # });
     /// ```
@@ -856,15 +855,14 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// ```
     /// # #![feature(async_closure)]
     /// # use nakama_rs::test_helpers::*;
-    /// # use std::collections::HashMap;
     /// use std::sync::mpsc::channel;
     /// # run_in_socket_example(async move |client, session, mut socket| {
     /// let (tx_matched, rx_matched) = channel();
-    /// socket.on_received_matchmaker_matched(|matched| {
+    /// socket.on_received_matchmaker_matched(move |matched| {
     ///     tx_matched.send(matched);
     /// });
     /// // Wait for match
-    /// let matched = rx_matched.recv().expect("Failed to receive match");
+    /// let matched = rx_matched.try_recv().expect("Failed to receive match");
     /// socket.join_match(matched).await.expect("Failed to join match");
     /// # Ok(())
     /// # });
@@ -890,8 +888,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// ```
     /// # #![feature(async_closure)]
     /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
     /// # run_in_socket_example(async move |client, session, mut socket| {
-    /// socket.join_match_by_id("match_id").await.expect("Failed to join match");
+    /// socket.join_match_by_id("match_id", HashMap::new()).await.expect("Failed to join match");
     /// # Ok(())
     /// # });
     /// ```
@@ -1024,11 +1023,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// use std::sync::mpsc::channel;
     /// # run_in_socket_example(async move |client, session, mut socket| {
     /// let (tx_party_presence, rx_party_presence) = channel();
-    /// socket.on_received_party_presence(|presence| {
+    /// socket.on_received_party_presence(move |presence| {
     ///     tx_party_presence.send(presence);
     /// });
-    /// let presence = rx_party_presence.recv().expect("Failed to receive party presence")
-    ///     .joins.remove(0).unwrap();
+    /// let presence = rx_party_presence.try_recv().expect("Failed to receive party presence")
+    ///     .joins.remove(0);
     /// socket.promote_party_member("party_id", presence).await.expect("Failed to list party join requests");
     /// # Ok(())
     /// # });
