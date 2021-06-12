@@ -93,6 +93,7 @@ struct SharedState {
     on_received_stream_state: Option<Box<dyn Fn(StreamData) + Send + 'static>>,
 }
 
+/// A socket to interact with Nakama realtime engine.
 pub struct WebSocket<A: SocketAdapter> {
     adapter: Arc<Mutex<A>>,
     shared_state: Arc<Mutex<SharedState>>,
@@ -401,6 +402,7 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
 impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     type Error = WebSocketError<A>;
 
+    /// Register a callback that is dispatched when the socket is closed.
     fn on_closed<T>(&mut self, callback: T)
     where
         T: Fn() + Send + 'static,
@@ -408,6 +410,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_closed = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when the socket is connected
     fn on_connected<T>(&mut self, callback: T)
     where
         T: Fn() + Send + 'static,
@@ -415,6 +418,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_connected = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a chat message was received
     fn on_received_channel_message<T>(&mut self, callback: T)
     where
         T: Fn(ApiChannelMessage) + Send + 'static,
@@ -425,6 +429,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_channel_message = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a presence change for joins and leaves in a chat channel was received.
     fn on_received_channel_presence<T>(&mut self, callback: T)
     where
         T: Fn(ChannelPresenceEvent) + Send + 'static,
@@ -435,6 +440,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_channel_presence = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when an error is received.
     fn on_received_error<T>(&mut self, callback: T)
     where
         T: Fn(Error) + Send + 'static,
@@ -442,6 +448,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_error = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a matchmaker matched the user.
     fn on_received_matchmaker_matched<T>(&mut self, callback: T)
     where
         T: Fn(MatchmakerMatched) + Send + 'static,
@@ -452,6 +459,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_matchmaker_matched = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when receiving a match state message
     fn on_received_match_state<T>(&mut self, callback: T)
     where
         T: Fn(MatchData) + Send + 'static,
@@ -459,6 +467,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_match_state = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when players join or leave a match.
     fn on_received_match_presence<T>(&mut self, callback: T)
     where
         T: Fn(MatchPresenceEvent) + Send + 'static,
@@ -466,6 +475,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_match_presence = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a notification is received
     fn on_received_notification<T>(&mut self, callback: T)
     where
         T: Fn(ApiNotification) + Send + 'static,
@@ -473,6 +483,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_notification = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a party is closed.
     fn on_received_party_close<T>(&mut self, callback: T)
     where
         T: Fn(PartyClose) + Send + 'static,
@@ -480,6 +491,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_party_close = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a party data is received.
     fn on_received_party_data<T>(&mut self, callback: T)
     where
         T: Fn(PartyData) + Send + 'static,
@@ -487,6 +499,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_party_data = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a party join request is received.
     fn on_received_party_join_request<T>(&mut self, callback: T)
     where
         T: Fn(PartyJoinRequest) + Send + 'static,
@@ -497,6 +510,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_party_join_request = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when a party leader message is received.
     fn on_received_party_leader<T>(&mut self, callback: T)
     where
         T: Fn(PartyLeader) + Send + 'static,
@@ -504,6 +518,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_party_leader = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when users join or leave a party.
     fn on_received_party_presence<T>(&mut self, callback: T)
     where
         T: Fn(PartyPresenceEvent) + Send + 'static,
@@ -511,6 +526,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_party_presence = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when users update their online status.
     fn on_received_status_presence<T>(&mut self, callback: T)
     where
         T: Fn(StatusPresenceEvent) + Send + 'static,
@@ -521,6 +537,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_status_presence = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when users join or leave a realtime stream.
     fn on_received_stream_presence<T>(&mut self, callback: T)
     where
         T: Fn(StreamPresenceEvent) + Send + 'static,
@@ -531,6 +548,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .on_received_stream_presence = Some(Box::new(callback));
     }
 
+    /// Register a callback that is dispatched when realtime stream data is received.
     fn on_received_stream_state<T>(&mut self, callback: T)
     where
         T: Fn(StreamData) + Send + 'static,
@@ -538,6 +556,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
     }
 
+    /// TODO: Undocumented?
     async fn accept_party_member(
         &self,
         party_id: &str,
@@ -556,6 +575,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// Join the matchmaker pool and search for opponents on the server.
     async fn add_matchmaker_manual(
         &self,
         query: &str,
@@ -581,6 +601,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(envelope.matchmaker_ticket.unwrap())
     }
 
+    /// Join the matchmaker pool and search for opponents on the server.
     async fn add_matchmaker(
         &self,
         matchmaker: &Matchmaker,
@@ -595,6 +616,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         .await
     }
 
+    /// TODO: Undocumented?
     async fn add_matchmaker_party(
         &self,
         party_id: &str,
@@ -622,6 +644,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(envelope.party_matchmaker_ticket.unwrap())
     }
 
+    /// TODO: Undocumented?
     async fn close_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_close = Some(PartyClose {
@@ -636,10 +659,25 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// Close the socket connection to the server.
     async fn close(&self) -> Result<(), Self::Error> {
         todo!()
     }
 
+    /// Connect to the server.
+    ///
+    /// TODO: Document parameters.
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.connect(&session, true, -1).await
+    ///     .expect("Failed to connect socket");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn connect(&self, session: &Session, appear_online: bool, connect_timeout: i32) {
         let ws_url = "ws://127.0.0.1";
         let port = 7350;
@@ -667,6 +705,20 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         }
     }
 
+    /// Create a multiplayer match on the server
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let multiplayer_match = socket.create_match().await
+    ///     .expect("Failed to create match");
+    /// println!("Created match with id: {}", multiplayer_match.match_id);
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn create_match(&self) -> Result<Match, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_create = Some(MatchCreate {});
@@ -679,6 +731,22 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(envelope.new_match.unwrap())
     }
 
+    /// Create a multiplayer party.
+    ///
+    /// If the party is open, anybody can join.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let party = socket.create_party(true, 10).await
+    ///     .expect("Failed to create a party");
+    /// println!("Created party with id: {}", party.party_id);
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn create_party(&self, open: bool, max_size: i32) -> Result<Party, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_create = Some(PartyCreate { max_size, open });
@@ -690,6 +758,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.party.unwrap())
     }
 
+    /// Follow users to receive their status updates
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.follow_users(&["userid1"], &["username2"]).await
+    ///     .expect("Failed to follow users");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn follow_users(
         &self,
         user_ids: &[&str],
@@ -707,7 +787,21 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.status.unwrap())
     }
-
+    /// Join a chat channel on the server.
+    ///
+    /// TODO: Documentation
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let chat = socket.join_chat("RoomName", 1, false, false).await
+    ///     .expect("Failed join chat");
+    /// println("Joined chat: {}", chat.room_name);
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn join_chat(
         &self,
         room_name: &str,
@@ -730,6 +824,19 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.channel.unwrap())
     }
 
+    /// Join a party on the server.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.join_party("party_id").await
+    ///     .expect("Failed join party");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn join_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_join = Some(PartyJoin {
@@ -743,6 +850,25 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// Join a multiplayer match with the matchmaker matched object.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use std::sync::mpsc::channel;
+    /// # run_in_socket_example(async move |client, session, mut socket| {
+    /// let (tx_matched, rx_matched) = channel();
+    /// socket.on_received_matchmaker_matched(|matched| {
+    ///     tx_matched.send(matched);
+    /// });
+    /// // Wait for match
+    /// let matched = rx_matched.recv().expect("Failed to receive match");
+    /// socket.join_match(matched).await.expect("Failed to join match");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn join_match(&self, matched: MatchmakerMatched) -> Result<Match, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_join = Some(MatchJoin {
@@ -758,6 +884,17 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.new_match.unwrap())
     }
 
+    /// Join a multiplayer match with ID
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_socket_example(async move |client, session, mut socket| {
+    /// socket.join_match_by_id("match_id").await.expect("Failed to join match");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn join_match_by_id(
         &self,
         match_id: &str,
@@ -777,6 +914,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.new_match.unwrap())
     }
 
+    /// Leave a chat channel
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.leave_chat("chat_id").await.expect("Failed to leave chat");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn leave_chat(&self, channel_id: &str) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.channel_leave = Some(ChannelLeave {
@@ -787,6 +936,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Leave a match
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.leave_match("match_id").await.expect("Failed to leave match");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn leave_match(&self, match_id: &str) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.match_leave = Some(MatchLeave {
@@ -797,6 +958,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Leave a party
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.leave_party("party_id").await.expect("Failed to leave party");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn leave_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_leave = Some(PartyLeave {
@@ -810,6 +983,21 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// List party join requests
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let join_requests = socket.list_party_join_requests("party_id").await.expect("Failed to list party join requests");
+    /// for presence in join_requests.presences.iter() {
+    ///     socket.accept_party_member("party_id", &presence).await.expect("Failed to accept party member");
+    /// }
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn list_party_join_requests(
         &self,
         party_id: &str,
@@ -826,6 +1014,25 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.party_join_request.unwrap())
     }
 
+    /// Promote a party member
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use std::sync::mpsc::channel;
+    /// # run_in_socket_example(async move |client, session, mut socket| {
+    /// let (tx_party_presence, rx_party_presence) = channel();
+    /// socket.on_received_party_presence(|presence| {
+    ///     tx_party_presence.send(presence);
+    /// });
+    /// let presence = rx_party_presence.recv().expect("Failed to receive party presence")
+    ///     .joins.remove(0).unwrap();
+    /// socket.promote_party_member("party_id", presence).await.expect("Failed to list party join requests");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn promote_party_member(
         &self,
         party_id: &str,
@@ -844,6 +1051,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// Remove a chat message from a channel
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.remove_chat_message("channel_id", "message_id").await.expect("Failed to remove chat message");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn remove_chat_message(
         &self,
         channel_id: &str,
@@ -862,6 +1081,21 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.channel_message_ack.unwrap())
     }
 
+    /// Leave the matchmaker pool with the ticket
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nakama_rs::matchmaker::Matchmaker;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let matchmaker = Matchmaker::new();
+    /// let ticket = socket.add_matchmaker(&matchmaker).await.expect("Failed to add matchmaker");
+    /// socket.remove_matchmaker(&ticket.ticket).await.expect("Failed to remove matchmaker");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn remove_matchmaker(&self, ticket: &str) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.matchmaker_remove = Some(MatchmakerRemove {
@@ -872,6 +1106,21 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Leave the party matchmaker pool with the ticket
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nakama_rs::matchmaker::Matchmaker;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let matchmaker = Matchmaker::new();
+    /// let ticket = socket.add_matchmaker_party("party_id", "", 2, 8, HashMap::new(), HashMap::new()).await.expect("Failed to add party matchmaker");
+    /// socket.remove_matchmaker_party(&ticket.party_id, &ticket.ticket).await.expect("Failed to remove party matchmaker");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn remove_matchmaker_party(
         &self,
         party_id: &str,
@@ -887,6 +1136,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Remove a party member
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.remove_party_member("party_id", user_presence).await.expect("Failed to remove a party member");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn remove_party_member(
         &self,
         party_id: &str,
@@ -905,6 +1166,19 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(())
     }
 
+    /// Execute RPC on the server
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let result = socket.rpc("rpc_func_name", "Hello World!").await.expect("Failed to execute rpc");
+    /// println!("Returned payload: {}", result.payload);
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn rpc(&self, func_id: &str, payload: &str) -> Result<ApiRpc, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.rpc = Some(ApiRpc {
@@ -920,6 +1194,29 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.rpc.unwrap())
     }
 
+    /// Execute RPC on the server.
+    ///
+    /// The payload is passed as a byte slice.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nanoserde::SerBin;
+    /// #[derive(SerBin)]
+    /// struct Message {
+    ///     content: String,
+    /// }
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let data = Message { content: "Hello World!".to_owned() };
+    /// let mut bin_data = vec![];
+    /// data.ser_bin(&mut bin_data);
+    /// let result = socket.rpc_bytes("rpc_func_name", bin_data.as_ref()).await.expect("Failed to execute rpc");
+    /// println!("Returned payload: {}", result.payload);
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn rpc_bytes(&self, func_id: &str, _payload: &[u8]) -> Result<ApiRpc, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.rpc = Some(ApiRpc {
@@ -936,6 +1233,29 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.rpc.unwrap())
     }
 
+    /// Send data to a multiplayer match on the server.
+    ///
+    /// If no presences are specified, the data is sent to all presences. Otherwise
+    /// only to the specified presences.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nanoserde::SerBin;
+    /// #[derive(SerBin)]
+    /// struct Command {
+    ///     velocity: i32,
+    /// }
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let data = Command { velocity: 100 };
+    /// let mut bin_data = vec![];
+    /// data.ser_bin(&mut bin_data);
+    /// socket.send_match_state("match_id", 1, bin_data.as_ref(), &[]).await.expect("Failed to send match state");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn send_match_state(
         &self,
         match_id: &str,
@@ -957,6 +1277,26 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Send data to a party.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nanoserde::SerBin;
+    /// #[derive(SerBin)]
+    /// struct Command {
+    ///     velocity: i32,
+    /// }
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let data = Command { velocity: 100 };
+    /// let mut bin_data = vec![];
+    /// data.ser_bin(&mut bin_data);
+    /// socket.send_party_data("match_id", 1, bin_data.as_ref()).await.expect("Failed to send party data");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn send_party_data(
         &self,
         party_id: &str,
@@ -974,6 +1314,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Unfollow users to stop receiving status updates.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.unfollow_users(&["userid1", "userid2"]).await.expect("Failed to unfollow users");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn unfollow_users(&self, user_ids: &[&str]) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.status_unfollow = Some(StatusUnfollow {
@@ -984,6 +1336,25 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Update a chat message on a chat channel
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nanoserde::SerJson;
+    /// #[derive(SerJson)]
+    /// struct ChatMessage {
+    ///     content: String,
+    /// }
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let content = ChatMessage { content: "Hello World!".to_owned() };
+    /// let content = content.serialize_json();
+    /// socket.update_chat_message("channel_id", "message_id", &content).await.expect("Failed to update chat message");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn update_chat_message(
         &self,
         channel_id: &str,
@@ -1004,6 +1375,17 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.channel_message_ack.unwrap())
     }
 
+    /// Update the users status
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.update_status("NewStatus").await.expect("Failed to update status");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn update_status(&self, status: &str) -> Result<(), Self::Error> {
         let mut envelope = self.make_envelope();
         envelope.status_update = Some(StatusUpdate {
@@ -1014,6 +1396,25 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false)
     }
 
+    /// Send a chat message on a chat channel
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// use nanoserde::SerJson;
+    /// #[derive(SerJson)]
+    /// struct ChatMessage {
+    ///     content: String,
+    /// }
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let content = ChatMessage { content: "Hello World!".to_owned() };
+    /// let content = content.serialize_json();
+    /// socket.write_chat_message("channel_id", &content).await.expect("Failed to send chat message");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn write_chat_message(
         &self,
         channel_id: &str,

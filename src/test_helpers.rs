@@ -44,6 +44,24 @@ pub fn run_in_example<
     })
 }
 
+pub fn run_in_socket_example<
+    T,
+    F: Future<Output = Result<T, DefaultClientError<RestHttpAdapter>>>,
+    C: Fn(DefaultClient<RestHttpAdapter>, Session, WebSocket<WebSocketAdapter>) -> F,
+>(
+    f: C,
+) {
+    let client = DefaultClient::new_with_adapter_and_defaults();
+    let socket = WebSocket::new_with_adapter();
+    block_on(async {
+        let session = client
+            .authenticate_device("exampletestid", None, true, HashMap::new())
+            .await
+            .expect("Failed to authenticate user");
+        f(client, session, socket).await.expect("Test failed");
+    })
+}
+
 pub async fn remove_group_if_exists<C: Client>(client: &C, session: &Session, group_name: &str) {
     let groups = client
         .list_groups(&session, Some(group_name), None, None)
