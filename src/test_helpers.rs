@@ -19,7 +19,7 @@ pub use crate::client::Client;
 use crate::default_client::{DefaultClient, DefaultClientError};
 use crate::http_adapter::RestHttpAdapter;
 use crate::session::Session;
-use crate::socket::Socket;
+pub use crate::socket::Socket;
 use crate::web_socket::WebSocket;
 use crate::web_socket_adapter::WebSocketAdapter;
 use core::time::Duration;

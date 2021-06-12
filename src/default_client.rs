@@ -473,7 +473,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # use std::collections::HashMap;
     /// # run_in_example(async move |client, session| {
-    /// let session = client.authenticate_google("googletoken", None, true, HashMap::new(), false).await
+    /// let session = client.authenticate_google("googletoken", None, true, HashMap::new()).await
     ///     .expect("Failed to authenticate user");
     /// # Ok(())
     /// # });
@@ -511,7 +511,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # use std::collections::HashMap;
     /// # run_in_example(async move |client, session| {
-    /// let session = client.authenticate_steam("steamtoken", None, true, HashMap::new(), false).await
+    /// let session = client.authenticate_steam("steamtoken", None, true, HashMap::new()).await
     ///     .expect("Failed to authenticate user");
     /// # Ok(())
     /// # });
@@ -550,7 +550,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # run_in_example(async move |client, session| {
     /// let group = client.create_group(&session, "NewGroup", None, None, None, None, None).await?;
     /// client.ban_group_users(&session, &group.id, &["userid1"]).await
-    ///     .expect("Failed to authenticate user");
+    ///     .expect("Failed to ban group users");
     /// # Ok(())
     /// # })
     /// ```
@@ -566,6 +566,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Block friends by id or username.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.block_friends(&session, &["userid1"], &["username2"]).await
+    ///     .expect("Failed to block friends");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn block_friends(
         &self,
         session: &Session,
@@ -579,6 +591,26 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Create a group.
+    ///
+    /// The user who creates the group becomes the owner and superadmin for it.
+    ///
+    /// The language tag `lang_tag` should be in BCP-47 format.
+    ///
+    /// If the group is open, any user can join.
+    ///
+    /// The default maximum member count is 100.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.create_group(&session, "GroupName", Some("Group description"), None, Some("en"), Some(true), Some(10)).await
+    ///     .expect("Failed to create group");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn create_group(
         &self,
         session: &Session,
@@ -605,6 +637,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Remove friends or friend requests.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.delete_friends(&session, &["userid1"], &["username1"]).await
+    ///     .expect("Failed to remove friends");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn delete_friends(
         &self,
         session: &Session,
@@ -618,11 +662,35 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Delete a group.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.delete_group(&session, "groupid").await
+    ///     .expect("Failed to delete group");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn delete_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::delete_group(&session.get_auth_token(), group_id);
         self.send(request).await
     }
 
+    /// Delete a leaderboard record.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.delete_leaderboard_record(&session, "leaderboard_id").await
+    ///     .expect("Failed to delete leaderboard record");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn delete_leaderboard_record(
         &self,
         session: &Session,
@@ -632,6 +700,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Delete notifications.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.delete_notifications(&session, &["notification_id1"]).await
+    ///     .expect("Failed to delete notifications");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn delete_notifications(
         &self,
         session: &Session,
@@ -642,6 +722,32 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Delete storage objects.
+    ///
+    /// If the version in [`ApiDeleteStorageObjectId`] is specified, the deletion fails if the object was modified on the server by another client.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// use nakama_rs::api::ApiDeleteStorageObjectId;
+    /// # run_in_example(async move |client, session| {
+    /// // Delete 10 objects from the "collection1" collection.
+    /// let mut objects = client.list_storage_objects(&session, "collection1", Some(10), None).await.expect("Failed to list object");
+    /// let delete_objects = objects.objects.drain(..).map(|object|
+    ///     ApiDeleteStorageObjectId {
+    ///         collection: object.collection,
+    ///         key: object.key,
+    ///         // If we keep the version empty, `version: ""` the object would be deleted
+    ///         // even if modified on the server by another client.
+    ///         version: object.version,
+    ///     }   
+    /// ).collect();
+    /// client.delete_storage_objects(&session, delete_objects.as_ref()).await
+    ///     .expect("Failed to delete storage objects");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn delete_storage_objects(
         &self,
         session: &Session,
@@ -656,6 +762,20 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Demote users in a group.
+    ///
+    /// The users role will change to the next role down. Members who are already at the lowest rank will be skipped.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.demote_group_users(&session, "group_id", &["userid1", "userid2"]).await
+    ///     .expect("Failed to demote group users");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn demote_group_users(
         &self,
         session: &Session,
@@ -667,6 +787,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Submit an event for processing in the server's registered runtime custom events handler.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let properties = [("name1", "value1"), ("name2", "value2")].iter().cloned().collect();
+    /// client.demote_group_users(&session, "eventname", properties).await
+    ///     .expect("Failed to submit event");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn event(
         &self,
         session: &Session,
@@ -685,11 +818,39 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Fetch the users account
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let account = client.get_account(&session).await
+    ///     .expect("Failed to submit event");
+    /// println!("{}", account.user.username);
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn get_account(&self, session: &Session) -> Result<ApiAccount, Self::Error> {
         let request = api::get_account(&session.get_auth_token());
         self.send(request).await
     }
 
+    /// Fetch users by id, username, or facebook ids
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let accounts = client.get_users(&session, &["userid1"], &["username2"], &["facebook_id3"]).await
+    ///     .expect("Failed to get users");
+    /// accounts.users.iter().for_each(|account| {
+    ///     println!("User {}", account.username);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn get_users(
         &self,
         session: &Session,
@@ -704,6 +865,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Import Facebook friends and add them as friends.
+    ///
+    /// The server will import friends when the user authenticates with Facebook.
+    /// This function can be used to be explicit with the import operation.
+    ///
+    /// The optional `reset` parameter will reset the Facebook friend import.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.import_facebook_friends(&session, "facebook_token", Some(true)).await
+    ///     .expect("Failed to import Facebook friends");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn import_facebook_friends(
         &self,
         session: &Session,
@@ -721,6 +899,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Import Steam friends and add them as friends.
+    ///
+    /// The server will import friends when the user authenticates with Steam.
+    /// This function can be used to be explicit with the import operation.
+    ///
+    /// The optional `reset` parameter will reset the Facebook friend import.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.import_steam_friends(&session, "steam_token", Some(true)).await
+    ///     .expect("Failed to import Steam friends");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn import_steam_friends(
         &self,
         session: &Session,
@@ -738,11 +933,37 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Join a group.
+    ///
+    /// If the group has open membership, join the group. Otherwise a join request will be sent.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.join_group(&session, "group_id").await
+    ///     .expect("Failed to join group");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn join_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::join_group(&session.get_auth_token(), group_id);
         self.send(request).await
     }
 
+    /// Join a tournament.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.join_tournament(&session, "tournament_id").await
+    ///     .expect("Failed to join tournament");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn join_tournament(
         &self,
         session: &Session,
@@ -752,6 +973,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Kick group users.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.kick_group_users(&session, "group_id", &["userid1", "userid2"]).await
+    ///     .expect("Failed to kick group users");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn kick_group_users(
         &self,
         session: &Session,
@@ -763,6 +996,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Leave a group.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.leave_group(&session, "group_id").await
+    ///     .expect("Failed to leave group");
+    /// # Ok(())
+    /// # })
+    /// ```
     async fn leave_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::leave_group(&session.get_auth_token(), group_id);
         self.send(request).await
@@ -1000,6 +1245,28 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List messages from a chat channel.
+    ///
+    /// The chat channel id can be retrieved by using [`Socket::join_chat`].
+    ///
+    /// TODO: Document forward
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let messages = client.list_channel_messages(&session, "channel_id", None, None, None).await
+    ///     .expect("Failed to list channel messages");
+    /// messages.messages.iter().for_each(|message| {
+    ///     println!("{}: {}", message.username, message.content)
+    /// });
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn list_channel_messages(
         &self,
         session: &Session,
@@ -1019,6 +1286,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List friends
+    ///
+    /// It is possible to filter friends based on their state. See [Friend state](https://heroiclabs.com/docs/social-friends/#friend-state) for possible states.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use std::collections::HashMap;
+    /// # run_in_example(async move |client, session| {
+    /// let friends = client.list_friends(&session, None, None, None).await
+    ///     .expect("Failed to list channel messages");
+    /// # Ok(())
+    /// # });
+    /// ```
     async fn list_friends(
         &self,
         session: &Session,
@@ -1145,7 +1429,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # run_in_example(async move |client, session| {
     /// let owner_id = client.get_account(&session).await.expect("Failed to get account").user.id;
-    /// client.list_leaderboard_records_around_owner(&session, "leaderboard_id", &owner_id, None, None, None).await
+    /// client.list_leaderboard_records_around_owner(&session, "leaderboard_id", &owner_id, None, None).await
     ///     .expect("Failed to list leaderboard records around owner");
     /// # Ok(())
     /// # })
@@ -1420,7 +1704,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # #![feature(async_closure)]
     /// # use nakama_rs::test_helpers::*;
     /// # run_in_example(async move |client, session| {
-    /// let result = client.list_current_user_groups(&session, None, None, None, None).await
+    /// let result = client.list_current_user_groups(&session, None, None, None).await
     ///     .expect("Failed to list current user groups");
     /// // Print all groups
     /// result.user_groups.iter().for_each(|group| {
@@ -1450,7 +1734,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// # #![feature(async_closure)]
     /// # use nakama_rs::test_helpers::*;
     /// # run_in_example(async move |client, session| {
-    /// let result = client.list_user_groups(&session, "user_id", None, None, None, None).await
+    /// let result = client.list_user_groups(&session, "user_id", None, None, None).await
     ///     .expect("Failed to list user groups");
     /// // Print all groups
     /// result.user_groups.iter().for_each(|group| {
@@ -1473,6 +1757,24 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// List storage objects in a collection which belong to a specific user and have public read access.
+    ///
+    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.list_users_storage_objects(&session, "collection", "user_id", None, None).await
+    ///     .expect("Failed to list users storage objects");
+    /// // Print all objects
+    /// result.objects.iter().for_each(|object| {
+    ///     println!("Object[{}]: {}", object.key, object.value);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn list_users_storage_objects(
         &self,
         session: &Session,
@@ -1492,6 +1794,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Promote group users.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.promote_group_user(&session, "group_id", &["userid1", "userid2"]).await
+    ///     .expect("Failed to pomote group users");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn promote_group_user(
         &self,
         session: &Session,
@@ -1504,6 +1818,28 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Read objects from the storage engine.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use nakama_rs::api::ApiReadStorageObjectId;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.read_storage_objects(&session, &[
+    ///     ApiReadStorageObjectId {
+    ///         collection: "collection1".to_owned(),
+    ///         key: "key1".to_owned(),
+    ///         user_id: "userid1".to_owned(),
+    ///     }
+    /// ]).await
+    ///     .expect("Failed to read storage objects");
+    /// result.objects.iter().for_each(|object| {
+    ///     println!("{} - {}: {}", object.collection, object.key, object.value);
+    /// });
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn read_storage_objects(
         &self,
         session: &Session,
@@ -1518,6 +1854,19 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Execute a function on the server
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let result = client.rpc(&session, "rpc_func_name", Some("Hello World!")).await
+    ///     .expect("Failed to execute rpc function");
+    /// println!("Returned: {}", result.payload);
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn rpc(
         &self,
         session: &Session,
@@ -1529,6 +1878,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Log out a session which optionally invalidates the authorization and/or refresh token.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.session_logout(&session).await
+    ///     .expect("Failed to log out session");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn session_logout(&self, session: &Session) -> Result<(), Self::Error> {
         let request = api::session_logout(
             &session.get_auth_token(),
@@ -1541,6 +1902,22 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Refresh the session.
+    ///
+    /// Refresh the session unless the current refresh token has expired. If `vars` are specified they will
+    /// replace what is curently stored inside the session token.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// let new_vars = [("key", "value")].iter().cloned().collect();
+    /// client.session_refresh(&session, new_vars).await
+    ///     .expect("Failed to refresh session");
+    /// # Ok(())
+    /// # })
+    /// ```    
     async fn session_refresh(
         &self,
         session: &Session,
@@ -1560,6 +1937,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             .map(DefaultClient::<A>::map_session)
     }
 
+    /// Unlink an Apple ID from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_apple(&session, "appletoken").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_apple(
             &session.get_auth_token(),
@@ -1572,6 +1961,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a custom ID from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_custom(&session, "customid").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_custom(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::unlink_custom(
             &session.get_auth_token(),
@@ -1584,6 +1985,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a device ID from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_device(&session, "usersdeviceid").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_device(&self, session: &Session, id: &str) -> Result<(), Self::Error> {
         let request = api::unlink_device(
             &session.get_auth_token(),
@@ -1596,6 +2009,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink an email with password from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_email(&session, "email@domain.com", "password").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_email(
         &self,
         session: &Session,
@@ -1614,6 +2039,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a Facebook profile from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_facebook(&session, "facebooktoken").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_facebook(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_facebook(
             &session.get_auth_token(),
@@ -1626,6 +2063,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a Game Center profile from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_game_center(&session, "bundleid", "playerid" ,"public_key_url", "salt", "signature", "timestamp").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_game_center(
         &self,
         session: &Session,
@@ -1652,6 +2101,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a Google profile from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_google(&session, "googletoken").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_google(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_google(
             &session.get_auth_token(),
@@ -1664,6 +2125,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Unlink a Steam profile from the users account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.unlink_steam(&session, "steamtoken").await
+    ///     .expect("Failed to unlink account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn unlink_steam(&self, session: &Session, token: &str) -> Result<(), Self::Error> {
         let request = api::unlink_steam(
             &session.get_auth_token(),
@@ -1676,6 +2149,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Update the user's account.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.update_account(&session, "NewUsername", None, None, None, None, None).await
+    ///     .expect("Failed to update account");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn update_account(
         &self,
         session: &Session,
@@ -1702,6 +2187,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Update a group.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.update_group(&session, "groupid", "GroupName", true, None, None, None).await
+    ///     .expect("Failed to update group");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn update_group(
         &self,
         session: &Session,
@@ -1729,6 +2226,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Validate a purchase receipt against the Apple App Store.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.validate_purchase_apple(&session, "receipt").await
+    ///     .expect("Failed to validate purchase");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn validate_purchase_apple(
         &self,
         session: &Session,
@@ -1744,6 +2253,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Validate a purchase receipt against the Google Play Store.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.validate_purchase_google(&session, "receipt").await
+    ///     .expect("Failed to validate purchase");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn validate_purchase_google(
         &self,
         session: &Session,
@@ -1759,6 +2280,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Validate a purchase receipt against the Huawei AppGallery.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.validate_purchase_huawei(&session, "receipt", "signature").await
+    ///     .expect("Failed to validate purchase");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn validate_purchase_huawei(
         &self,
         session: &Session,
@@ -1776,6 +2309,18 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Write a leaderboard record.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    /// client.write_leaderboard_record(&session, "leaderboard_id", 100, None, None, None).await
+    ///     .expect("Failed to write leaderboard record");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn write_leaderboard_record(
         &self,
         session: &Session,
@@ -1802,6 +2347,33 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Write objects to the storage engine.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use nakama_rs::api::ApiWriteStorageObject;
+    /// # use nanoserde::SerJson;
+    /// #[derive(SerJson)]
+    /// struct Card {
+    ///     name: String,
+    ///     cost: i32,
+    /// }
+    /// # run_in_example(async move |client, session| {
+    /// let card = Card { cost: 10, name: "Ship".to_owned() };
+    /// client.write_storage_objects(&session, &[ApiWriteStorageObject {
+    ///     collection: "collection1".to_owned(),
+    ///     key: "ship".to_owned(),
+    ///     value: card.serialize_json(),
+    ///     permission_write: 1,
+    ///     permission_read: 1,
+    ///     version: "*".to_owned(),
+    /// }]).await
+    ///     .expect("Failed to write object");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn write_storage_objects(
         &self,
         session: &Session,
@@ -1817,6 +2389,32 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
+    /// Write a tournament record
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # use nakama_rs::api::ApiWriteStorageObject;
+    /// #[derive(SerJson)]
+    /// struct Card {
+    ///     name: String,
+    ///     cost: i32,
+    /// }
+    /// # run_in_example(async move |client, session| {
+    /// let card = Card { cost: 10, name: "Ship".to_owned() };
+    /// client.write_storage_objects(&session, &[ApiWriteStorageObject {
+    ///     collection: "collection1".to_owned(),
+    ///     key: "ship".to_owned(),
+    ///     value: card.serialize_json(),
+    ///     permission_write: 1,
+    ///     permission_read: 1,
+    ///     version: "*".to_owned(),
+    /// }]).await
+    ///     .expect("Failed to write object");
+    /// # Ok(())
+    /// # })
+    /// ```   
     async fn write_tournament_record(
         &self,
         session: &Session,
