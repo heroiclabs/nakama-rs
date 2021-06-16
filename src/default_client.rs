@@ -22,6 +22,12 @@
 //!
 //! If no `limit` is specified, the default `limit` applies.
 //!
+//! ## Authentication
+//! The authentication endpoints allow you to specify using the `create` flag that the account should be created if it does
+//! not exist. For that case, you can provide the `username` of the user.
+//!
+//! You can pass session data that will be bundled in the session token using the `vars` parameter.
+//!
 use crate::api;
 use crate::api::{
     ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice, ApiAccountEmail,
@@ -216,8 +222,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate a user with an Apple ID against the server.
     ///
     /// Authenticate user with the ID `token` received from Apple.
-    /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
-    /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -256,8 +262,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate a user with a custom id.
     ///
     /// Authenticate user with a custom identifier usually obtained from an external authentication service.
-    /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
-    /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -296,10 +302,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with a device id.
     ///
-    /// TODO: Mention minimum length requirements;
     /// Authenticate user with a device identifier usually obtained from a platform API.
-    /// If the user does not exist and `create` is passed, the user is created with the optional `username`.
-    /// `vars` can contain extra information that will be bundled in the session token.
+    ///
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -337,7 +342,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with an email and password.
     ///
-    /// TODO: Document all
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -377,7 +382,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with a Facebook auth token
     ///
-    /// TODO: Document all
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
+    ///
+    /// Set `import` to true to import Facebook friends to the user's social profile.
     ///
     /// # Example
     /// ```
@@ -417,7 +424,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with Apple Game Center
     ///
-    /// TODO: Document all
+    /// See [Game center](https://heroiclabs.com/docs/authentication/#game-center) on how to set up authentication using the Apple Game Center.
+    /// todo! The documentation doesn't help here
+    ///
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -465,7 +475,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with a Google auth token
     ///
-    /// TODO: Document all
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -503,7 +513,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Authenticate a user with a Steam auth token
     ///
-    /// TODO: Document all
+    /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
     /// # Example
     /// ```
@@ -1117,7 +1127,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Link a Facebook profile to the social profiles on the current user's account.
     ///
-    /// TODO: Token
+    /// If `import` is set to true, import Facebook friends to the user's social graph.
     ///
     /// # Example
     /// ```
@@ -1149,7 +1159,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Link a Game Center profile to the social profiles on the current user's account.
     ///
-    /// TODO: All
+    /// See [Game center](https://heroiclabs.com/docs/authentication/#game-center) on how to set up authentication using the Apple Game Center.
+    /// todo! The documentation doesn't help here
     ///
     /// # Example
     /// ```
@@ -1213,7 +1224,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Link a Steam profile to the social profiles on the current user's account.
     ///
-    /// TODO: Document import
+    /// If `import` is set to true, import Steam friends to the user's social graph.
     ///
     /// # Example
     /// ```
@@ -1249,7 +1260,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// The chat channel id can be retrieved by using [`Socket::join_chat`].
     ///
-    /// TODO: Document forward
+    /// TODO: How does forward work?
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
     ///
@@ -1381,7 +1392,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// List records from a leaderboard
     ///
-    /// TODO: Document owern_ids and expiry
+    /// If you specify `owner_ids` only records of those users will be returned.
+    ///
+    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
+    /// TODO: Verify this is correct.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
     ///
@@ -1419,7 +1433,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// List leaderboard records around owner
     ///
-    /// TODO: Document owern_ids and expiry
+    /// If you specify `owner_ids` only records of those users will be returned.
+    ///
+    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
+    /// TODO: Verify this is correct.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
     ///
@@ -1455,11 +1472,11 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// Fetch matches active on the server
     ///
-    /// TODO: Document min and max.
+    /// You can specify the minimum and maximum number of match participants.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
     ///
-    /// TODO: Document label and query.
+    /// Use the label or a query to filter the match list.
     ///
     /// # Example
     /// ```
@@ -1571,7 +1588,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// List tournament records around owner
     ///
-    /// TODO: Document owner_id and expirty
+    /// If you specify `owner_ids` only records of those users will be returned.
+    ///
+    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
+    /// TODO: Verify this is correct.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
     ///
@@ -1610,7 +1630,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// List tournament records
     ///
-    /// TODO: Document owner_id and expirty
+    /// If you specify `owner_ids` only records of those users will be returned.
+    ///
+    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
+    /// TODO: Verify this is correct.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
     ///
@@ -1725,7 +1748,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     /// List groups an user is a member of.
     ///
-    /// TODO: Document all
+    /// You can filter by the group state. For possible values, see [Groups and Clans](https://heroiclabs.com/docs/social-groups-clans/#groups-and-clans)
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
     ///
