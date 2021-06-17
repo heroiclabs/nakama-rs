@@ -59,29 +59,36 @@
 //! In the code above we use `authenticate_email` but for other authentication options have a look at the [code examples](authentication.md#authenticate). This [full example](#full-example) covers all our recommended steps.
 //!
 //! ## Sessions
-//! TODO
 //!
 //! When authenticated the server responds with an auth token (JWT) which contains useful properties and gets deserialized into a `Session` object.
 //!
-//! ```csharp
-//! Debug.Log(session.AuthToken); //! raw JWT token
-//! Debug.LogFormat("Session user id: '{0}'", session.UserId);
-//! Debug.LogFormat("Session user username: '{0}'", session.Username);
-//! Debug.LogFormat("Session has expired: {0}", session.IsExpired);
-//! Debug.LogFormat("Session expires at: {0}", session.ExpireTime); //! in seconds.
+//! ```
+//! # use nakama_rs::test_helpers::run_in_example;
+//! # run_in_example(|client, session| {
+//!     println!("Auth token: {}", session.get_auth_token());
+//!     println!("Session user id: {}", session.user_id());
+//!     println!("Session is expired: {}", session.is_expired());
+//!     println!("Session expires at: {}", session.expire_time());
+//! # });
 //! ```
 //!
 //! It is recommended to store the auth token from the session and check at startup if it has expired. If the token has expired you must reauthenticate. The expiry time of the token can be changed as a [setting](install-configuration.md#common-properties) in the server.
 //!
-//! ```csharp
-//! const string prefKeyName = "nakama.session";
-//! ISession session;
-//! var authToken = PlayerPrefs.GetString(prefKeyName);
-//! if (string.IsNullOrEmpty(authToken) || (session = Session.Restore(authToken)).IsExpired)
-//! {
-//!     Debug.Log("Session has expired. Must reauthenticate!");
+//! ```
+//! use std::fs;
+//! # use nakama_rs::test_helpers::run_in_example;
+//! # use nakama_rs::session::Session;
+//! # run_in_example(|client, session| {
+//! fs::write("./nakama.session", session.get_auth_token()).expect("Failed to save token");
+//! # });
+//!
+//! let session = fs::read_to_string("./nakama.session")
+//!     .map(|token| Session::new(&token, ""));
+//! let session = match session {
+//!     Ok(session) if session.is_expired() => panic!("Session has expired. Must reauthenticate!"),
+//!     Ok(session) => session,
+//!     Err(err) => panic!("No session available. Please authenticate")
 //! };
-//! Debug.Log(session);
 //! ```
 //!
 //! ## Send requests
