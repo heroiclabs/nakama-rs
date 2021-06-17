@@ -21,17 +21,17 @@ use std::collections::HashMap;
 fn test_session_variables() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
-    let result = block_on(async {
+    block_on(async {
         let mut vars = HashMap::new();
         vars.insert("ident", "hidden");
         let session = client
             .authenticate_device("somenewdeviceid", None, true, vars)
-            .await?;
+            .await.expect("Failed to authenticate");
 
-        client.get_account(&session).await
+        let session_vars = session.vars();
+        assert_eq!(session_vars.get("ident"), Some(&"hidden".to_owned()));
+        assert_eq!(session.is_expired(), false);
+        // Session in development mode will expire in 60 seconds
+        assert_eq!(session.will_expire_soon(), true);
     });
-
-    println!("Result: {:?}", result);
-    // TODO: parse "vrs" from the token payload
-    // let account = result.unwrap();
 }
