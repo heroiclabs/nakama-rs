@@ -16,7 +16,6 @@ use std::sync::{Arc, Mutex};
 use nanoserde::DeJson;
 use std::collections::HashMap;
 use chrono::{DateTime, Utc, TimeZone, Duration};
-use std::str::FromStr;
 use std::ops::Add;
 
 #[derive(Debug, Clone)]
@@ -110,6 +109,14 @@ impl Session {
 
     pub fn get_refresh_token(&self) -> Option<String> {
         self.inner.lock().unwrap().refresh_token.clone()
+    }
+
+    pub fn expire_time(&self) -> DateTime<Utc> {
+        self.inner.lock().unwrap().expire_time.clone()
+    }
+
+    pub fn refresh_expire_time(&self) -> Option<DateTime<Utc>> {
+        self.inner.lock().unwrap().refresh_expire_time.clone()
     }
 
     pub fn has_expired(&self, date_time: DateTime<Utc>) -> bool {
