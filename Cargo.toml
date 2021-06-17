@@ -20,6 +20,7 @@ oneshot = "0.1.2"
 log = "0.4.14"
 isahc = "1.4.0"
 qws = { version = "0.7.9", features = ["ssl"] }
+chrono = "0.4.19"
 
 #[cfg(feature = "test")]
 futures = "0.3.15"
