@@ -16,6 +16,8 @@ use futures::executor::block_on;
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
 use std::collections::HashMap;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[test]
 fn test_session_variables() {
@@ -34,4 +36,17 @@ fn test_session_variables() {
         // Session in development mode will expire in 60 seconds
         assert_eq!(session.will_expire_soon(), true);
     });
+}
+
+#[test]
+fn test_session_refresh() {
+    block_on(async {
+        let client = DefaultClient::new_with_adapter_and_defaults();
+        let session = client.authenticate_device("somenewdeviceid", None, true, HashMap::new()).await.expect("Failed to authenticate");
+        let auth_token = session.get_auth_token().clone();
+        sleep(Duration::from_secs(1));
+        // The default session expiration (60s) will cause a refresh
+        client.get_account(&session).await.expect("failed to get account");
+        assert_ne!(auth_token, session.get_auth_token());
+    })
 }

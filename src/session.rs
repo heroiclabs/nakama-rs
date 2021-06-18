@@ -31,7 +31,8 @@ struct Inner {
     refresh_expire_time: Option<DateTime<Utc>>,
     username: String,
     uid: String,
-    vars: Arc<HashMap<String, String>>
+    vars: Arc<HashMap<String, String>>,
+    auto_refresh: bool,
 }
 
 #[derive(Debug, DeJson)]
@@ -43,6 +44,7 @@ struct AuthTokenData {
     #[nserde(rename = "uid")]
     uid: String,
     #[nserde(rename = "vrs")]
+    #[nserde(default)]
     vars: HashMap<String, String>,
 }
 
@@ -89,8 +91,17 @@ impl Session {
                 username: auth_token_data.username,
                 uid: auth_token_data.uid,
                 vars: Arc::new(auth_token_data.vars),
+                auto_refresh: true,
             })),
         }
+    }
+
+    pub fn get_auto_refresh(&self) -> bool {
+        self.inner.lock().unwrap().auto_refresh
+    }
+
+    pub fn set_auto_refresh(&self, auto_refresh: bool) {
+        self.inner.lock().unwrap().auto_refresh = auto_refresh;
     }
 
     pub fn replace(&self, auth_token: &str, refresh_token: &str) {
@@ -161,7 +172,7 @@ mod test {
     #[test]
     fn test_session() {
         let auth_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjM5NjE2NzQsInVzbiI6IlVzZXJuYW1lIiwidWlkIjoiMTIzNDU2NzgiLCJ2cnMiOnsiaGVsbG8iOiJ3b3JsZCIsIm1vcmUiOiJkYXRhIn19._QvIe6v63HduVk9Gf4RIWUPuGsQBJam2WXbms6P-dXg";
-        let refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOiIxNjIzOTgxNjc0In0.vA2b5HzQtjMUAJBvJuqOZL0UczEYLHDlSS0HkahHQeI";
+        let refresh_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjM5ODE2NzR9.KnTXR5Gypq92qclwvxcgUSHsWkiJrQsAM2Tt6jmGXvs";
 
         let session = Session::new(auth_token, refresh_token);
         assert_eq!(session.username(), "Username".to_owned());
