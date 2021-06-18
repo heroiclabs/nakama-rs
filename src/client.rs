@@ -414,7 +414,7 @@ pub trait Client {
         &self,
         session: &Session,
         vars: HashMap<&str, &str>,
-    ) -> Result<Session, Self::Error>;
+    ) -> Result<(), Self::Error>;
 
     async fn unlink_apple(&self, session: &Session, token: &str) -> Result<(), Self::Error>;
 

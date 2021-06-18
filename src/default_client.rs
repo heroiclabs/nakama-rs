@@ -120,26 +120,16 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
         Session::new(&api_session.token, &api_session.refresh_token)
     }
 
-    async fn _refresh_session(
+    async fn refresh_session(
         &self,
         session: &Session,
     ) -> Result<(), <DefaultClient<A> as Client>::Error> {
-        // TODO: check expiration
-        if let Some(refresh_token) = session.get_refresh_token().take() {
-            let request = api::session_refresh(
-                &self.server_key,
-                &self.server_password,
-                ApiSessionRefreshRequest {
-                    vars: HashMap::new(),
-                    token: refresh_token,
-                },
-            );
-
-            let sess = self.send(request).await;
-            let result = sess.map(|s| {
-                session.replace(&s.token, &s.refresh_token);
-            });
-            return result;
+        let refresh_token = session.get_refresh_token();
+        let vars = session.vars();
+        let vars = vars.iter().map(|(key, val)| (key.as_str(), val.as_str())).collect();
+        if session.get_auto_refresh() && refresh_token.is_some()
+            && session.will_expire_soon() {
+            return self.session_refresh(session, vars).await
         }
 
         Ok(())
@@ -204,6 +194,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let ids = str_slice_to_owned(ids);
         let usernames = str_slice_to_owned(usernames);
         let request = api::add_friends(&session.get_auth_token(), &ids, &usernames);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -226,6 +217,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let request = api::add_group_users(&session.get_auth_token(), group_id, &ids);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -582,6 +574,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let user_ids = str_slice_to_owned(user_ids);
         let request = api::ban_group_users(&session.get_auth_token(), group_id, &user_ids);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -607,6 +600,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let usernames = str_slice_to_owned(usernames);
         let request = api::block_friends(&session.get_auth_token(), &ids, &usernames);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -653,6 +647,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -678,6 +673,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let usernames = str_slice_to_owned(usernames);
         let request = api::delete_friends(&session.get_auth_token(), &ids, &usernames);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -695,6 +691,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// ```
     async fn delete_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::delete_group(&session.get_auth_token(), group_id);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -716,6 +713,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         leaderboard_id: &str,
     ) -> Result<(), Self::Error> {
         let request = api::delete_leaderboard_record(&session.get_auth_token(), leaderboard_id);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -738,6 +736,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let request = api::delete_notifications(&session.get_auth_token(), &ids);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -778,6 +777,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 object_ids: ids.to_vec(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -803,6 +803,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<(), Self::Error> {
         let user_ids = str_slice_to_owned(user_ids);
         let request = api::demote_group_users(&session.get_auth_token(), group_id, &user_ids);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -834,6 +835,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 properties: string_map_to_owned_string_map(properties),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -852,6 +854,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// ```
     async fn get_account(&self, session: &Session) -> Result<ApiAccount, Self::Error> {
         let request = api::get_account(&session.get_auth_token());
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -881,6 +884,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let usernames = str_slice_to_owned(usernames);
         let facebook_ids = str_slice_to_owned(facebook_ids);
         let request = api::get_users(&session.get_auth_token(), &ids, &usernames, &facebook_ids);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -915,6 +919,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
             reset,
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -949,6 +954,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
             reset,
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -968,6 +974,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// ```
     async fn join_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::join_group(&session.get_auth_token(), group_id);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -989,6 +996,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         tournament_id: &str,
     ) -> Result<(), Self::Error> {
         let request = api::join_tournament(&session.get_auth_token(), tournament_id);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1012,6 +1020,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<(), Self::Error> {
         let ids = str_slice_to_owned(ids);
         let request = api::kick_group_users(&session.get_auth_token(), group_id, &ids);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1029,6 +1038,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// ```
     async fn leave_group(&self, session: &Session, group_id: &str) -> Result<(), Self::Error> {
         let request = api::leave_group(&session.get_auth_token(), group_id);
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1053,6 +1063,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 token: token.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1077,6 +1088,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 id: id.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1101,6 +1113,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 id: id.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1131,6 +1144,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 password: password.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1163,6 +1177,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
             import,
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1203,6 +1218,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 timestamp_seconds: timestamp.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1227,6 +1243,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 token: token.to_owned(),
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1261,6 +1278,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 sync: import,
             },
         );
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1302,6 +1320,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             cursor,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1331,6 +1350,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiFriendList, Self::Error> {
         let request = api::list_friends(&session.get_auth_token(), limit, state, cursor);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1363,6 +1383,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let request =
             api::list_group_users(&session.get_auth_token(), group_id, limit, state, cursor);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1395,6 +1416,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiGroupList, Self::Error> {
         let request = api::list_groups(&session.get_auth_token(), name, cursor, limit);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1436,6 +1458,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             expiry,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1475,6 +1498,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             expiry,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1516,6 +1540,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             Some(query),
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1560,6 +1585,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiNotificationList, Self::Error> {
         let request = api::list_notifications(&session.get_auth_token(), limit, cacheable_cursor);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1591,6 +1617,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let request =
             api::list_storage_objects(&session.get_auth_token(), collection, None, limit, cursor);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1633,6 +1660,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             expiry,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1678,6 +1706,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             expiry,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1726,6 +1755,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             cursor,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1760,6 +1790,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let request =
             api::list_user_groups(&session.get_auth_token(), user_id, limit, state, cursor);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1797,6 +1828,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             cursor,
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1821,6 +1853,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let ids = str_slice_to_owned(ids);
         let request = api::promote_group_users(&session.get_auth_token(), group_id, &ids);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1857,6 +1890,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             ApiReadStorageObjectsRequest { object_ids: ids },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1881,6 +1915,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ) -> Result<ApiRpc, Self::Error> {
         let request = api::rpc_func2(&session.get_auth_token(), id, payload, None);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1928,19 +1963,23 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         &self,
         session: &Session,
         vars: HashMap<&str, &str>,
-    ) -> Result<Session, Self::Error> {
+    ) -> Result<(), Self::Error> {
+        let refresh_token = session.get_refresh_token().expect("Session refresh can only be called when a refresh token is available");
         let request = api::session_refresh(
             &self.server_key,
             &self.server_password,
             ApiSessionRefreshRequest {
-                token: session.get_auth_token().clone(),
+                token: refresh_token,
                 vars: string_map_to_owned_string_map(vars),
             },
         );
 
-        self.send(request)
-            .await
-            .map(DefaultClient::<A>::map_session)
+        let data = self.send(request)
+            .await?;
+
+        session.replace(&data.token, &data.refresh_token);
+
+        Ok(())
     }
 
     /// Unlink an Apple ID from the users account.
@@ -1964,6 +2003,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -1988,6 +2028,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2012,6 +2053,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2042,6 +2084,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2066,6 +2109,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2104,6 +2148,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2128,6 +2173,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2152,6 +2198,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2190,6 +2237,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2229,6 +2277,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2256,6 +2305,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2283,6 +2333,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2312,6 +2363,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2348,8 +2400,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
-        println!("{}", request.body);
-
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2392,6 +2443,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 
@@ -2442,8 +2494,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 operator,
             },
         );
-        println!("{:?}", request);
 
+        self.refresh_session(session).await?;
         self.send(request).await
     }
 }
