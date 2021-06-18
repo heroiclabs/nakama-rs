@@ -1716,36 +1716,6 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    /// List the groups the current user is a member of
-    ///
-    /// TODO: Document all
-    ///
-    /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
-    ///
-    /// # Example
-    /// ```
-    /// # #![feature(async_closure)]
-    /// # use nakama_rs::test_helpers::*;
-    /// # run_in_example(async move |client, session| {
-    /// let result = client.list_current_user_groups(&session, None, None, None).await
-    ///     .expect("Failed to list current user groups");
-    /// // Print all groups
-    /// result.user_groups.iter().for_each(|group| {
-    ///     println!("Group: {}", group.group.name);
-    /// });
-    /// # Ok(())
-    /// # })
-    /// ```    
-    async fn list_current_user_groups(
-        &self,
-        _session: &Session,
-        _state: Option<i32>,
-        _limit: Option<i32>,
-        _cursor: Option<&str>,
-    ) -> Result<ApiUserGroupList, Self::Error> {
-        todo!()
-    }
-
     /// List groups an user is a member of.
     ///
     /// You can filter by the group state. For possible values, see [Groups and Clans](https://heroiclabs.com/docs/social-groups-clans/#groups-and-clans)

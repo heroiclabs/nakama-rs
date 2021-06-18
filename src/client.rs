@@ -370,14 +370,6 @@ pub trait Client {
         cursor: Option<&str>,
     ) -> Result<ApiTournamentList, Self::Error>;
 
-    async fn list_current_user_groups(
-        &self,
-        session: &Session,
-        state: Option<i32>,
-        limit: Option<i32>,
-        cursor: Option<&str>,
-    ) -> Result<ApiUserGroupList, Self::Error>;
-
     async fn list_user_groups(
         &self,
         session: &Session,

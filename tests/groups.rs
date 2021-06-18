@@ -274,28 +274,6 @@ fn test_list_groups() {
 }
 
 #[test]
-fn test_list_current_user_groups() {
-    // block_on(async {
-    //     let (client, session1, session2, session3) =
-    //         test_helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
-    //             .await;
-    //
-    //     test_helpers::re_create_group(&client, &session1, "ListGroups1").await;
-    //     test_helpers::re_create_group(&client, &session1, "ListGroups2").await;
-    //     let groups1 = client
-    //         .list_current_user_groups()
-    //         .list_groups(&session1, None, Some(1), None)
-    //         .await
-    //         .unwrap();
-    //     let groups2 = client
-    //         .list_groups(&session1, None, None, Some(&groups1.cursor))
-    //         .await;
-    //     println!("{:?}", groups2);
-    //     assert_eq!(groups2.is_ok(), true);
-    // })
-}
-
-#[test]
 fn test_list_user_groups() {
     block_on(async {
         let (client, session1, _, _) = test_helpers::clients_with_users(
