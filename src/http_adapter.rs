@@ -41,6 +41,7 @@ impl Display for RestHttpError {
 
 impl Error for RestHttpError {}
 
+#[derive(Clone)]
 pub struct RestHttpAdapter {
     server: String,
     port: u32,

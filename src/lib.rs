@@ -198,6 +198,37 @@
 //!     .unwrap();
 //! ```
 //!
+//! ## Thread safety
+//! Both the `DefaultClient` and `WebSocket` implement `Send` and `Clone`. The HTTP requests
+//! and Web Socket messages are each execued on a separate thread. It is cheap to clone `DefaultClient` and `WebSocket`.
+//!
+//! ```
+//! # use crate::{DefaultClient, Client};
+//! # use std::thread::spawn;
+//! # use futures::executor::block_on;
+//! # use std::collections::HashMap;
+//!
+//! let client = DefaultClient::new_with_adapter_and_defaults();
+//!
+//! let handle = spawn({
+//!     let client = client.clone();
+//!     move || {
+//!         block_on(async {
+//!             client.authenticate_device("usersdeviceid", None, false, HashMap::new()).await.expect("Failed to authetnicate")
+//!         })
+//!     }
+//! });
+//!
+//! let session = handle.join().expect("Failed to join");
+//!
+//! let account = block_on(async {
+//!     client.get_account(&session).await.expect("Failed to get account")
+//! });
+//!
+//! println!("Account: {:?}", account)
+//!
+//! ```
+//!
 
 mod api_gen;
 mod api_gen_enum;
