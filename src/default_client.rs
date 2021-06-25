@@ -1404,8 +1404,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// If you specify `owner_ids` only records of those users will be returned.
     ///
-    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
-    /// TODO: Verify this is correct.
+    /// Leaderboards can be scheduled to recur. So if you want to grab the records for specific instances of that leaderboard
+    /// in the past, then you can specify the `expiry`.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
     ///
@@ -1445,8 +1445,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// If you specify `owner_ids` only records of those users will be returned.
     ///
-    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
-    /// TODO: Verify this is correct.
+    /// Leaderboards can be scheduled to recur. So if you want to grab the records for specific instances of that leaderboard
+    /// in the past, then you can specify the `expiry`.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
     ///
@@ -1600,8 +1600,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// If you specify `owner_ids` only records of those users will be returned.
     ///
-    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
-    /// TODO: Verify this is correct.
+    /// Leaderboards can be scheduled to recur. So if you want to grab the records for specific instances of that leaderboard
+    /// in the past, then you can specify the `expiry`.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit`.
     ///
@@ -1642,8 +1642,8 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// If you specify `owner_ids` only records of those users will be returned.
     ///
-    /// Set `expiry` in seconds (since epoch) to fetch older records. Optional. 0 means active leaderboards.
-    /// TODO: Verify this is correct.
+    /// Leaderboards can be scheduled to recur. So if you want to grab the records for specific instances of that leaderboard
+    /// in the past, then you can specify the `expiry`.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
     ///
