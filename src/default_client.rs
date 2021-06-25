@@ -62,6 +62,16 @@ pub struct DefaultClient<A: ClientAdapter> {
     server_password: String,
 }
 
+impl<A: ClientAdapter + Clone> Clone for DefaultClient<A> {
+    fn clone(&self) -> Self {
+        DefaultClient {
+            adapter: self.adapter.clone(),
+            server_key: self.server_key.clone(),
+            server_password: self.server_password.clone(),
+        }
+    }
+}
+
 #[derive(DeJson)]
 pub struct ClientError {
     pub error: String,
