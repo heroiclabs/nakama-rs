@@ -24,6 +24,7 @@ use std::sync::mpsc::{Receiver, SendError, Sender};
 enum Message {
     StringMessage(String),
     Connected,
+    Closed,
     Error(qws::Error),
 }
 
@@ -38,6 +39,8 @@ pub struct WebSocketAdapter {
 
 // Client on the websocket thread
 struct WebSocketClient {
+    auto_reconnect: bool,
+    url: String,
     tx: Sender<Message>,
 }
 
@@ -83,7 +86,15 @@ impl qws::Handler for WebSocketClient {
     }
 
     fn on_close(&mut self, code: CloseCode, reason: &str) {
+        if self.auto_reconnect {
+            self.tx.connect(self.url.clone());
+        }
+
         debug!("Connection closing due to ({:?}) {}", code, reason);
+        let result = self.send(Message::Closed);
+        if let Err(err) = result {
+            error!("Failed to send {}", err);
+        }
     }
 
     // Copied from trait for now
@@ -169,7 +180,7 @@ impl SocketAdapter for WebSocketAdapter {
     }
 
     fn close(&mut self) {
-        todo!()
+        self.tx_message.unwrap().close(CloseCode::Normal);
     }
 
     fn connect(&mut self, addr: &str, _timeout: i32) {
@@ -180,12 +191,12 @@ impl SocketAdapter for WebSocketAdapter {
 
         std::thread::spawn({
             move || {
-                qws::connect(addr, |out| {
+                qws::connect(addr.clone(), |out| {
                     let response = tx_init.send(out);
                     if let Err(err) = response {
                         error!("connect (Thread): Error sending data {}", err);
                     }
-                    return WebSocketClient { tx: tx.clone() };
+                    return WebSocketClient { tx: tx.clone(), url: addr, auto_reconnect: false };
                 })
             }
         });
@@ -223,6 +234,11 @@ impl SocketAdapter for WebSocketAdapter {
                     Message::Error(err) => {
                         if let Some(ref cb) = self.on_received {
                             cb(Err(err.into()));
+                        }
+                    }
+                    Message::Closed => {
+                        if let Some(ref cb) = self.on_closed {
+                            cb();
                         }
                     }
                 }
