@@ -14,18 +14,25 @@
 
 use crate::socket_adapter::SocketAdapter;
 use log::{debug, error, trace};
+use url;
 use qws;
 use qws::{CloseCode, Handshake};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, SendError, Sender};
+use std::thread::spawn;
+use std::ops::Add;
+use chrono::{FixedOffset, Duration, DateTime, Utc};
+use rand::Rng;
+use std::cell::RefCell;
 
 enum Message {
     StringMessage(String),
     Connected,
     Closed,
     Error(qws::Error),
+    Reconnect(DateTime<Utc>)
 }
 
 pub struct WebSocketAdapter {
@@ -35,12 +42,14 @@ pub struct WebSocketAdapter {
 
     rx_message: Option<Receiver<Message>>,
     tx_message: Option<qws::Sender>,
+
+    addr: String,
+    reconnect_on: RefCell<Option<DateTime<Utc>>>,
 }
 
 // Client on the websocket thread
 struct WebSocketClient {
     auto_reconnect: bool,
-    url: String,
     tx: Sender<Message>,
 }
 
@@ -56,6 +65,7 @@ impl qws::Handler for WebSocketClient {
     }
 
     fn on_open(&mut self, shake: Handshake) -> qws::Result<()> {
+        println!("Opening");
         if let Some(addr) = shake.remote_addr()? {
             let result = self.send(Message::Connected);
             match result {
@@ -86,8 +96,10 @@ impl qws::Handler for WebSocketClient {
     }
 
     fn on_close(&mut self, code: CloseCode, reason: &str) {
-        if self.auto_reconnect {
-            self.tx.connect(self.url.clone());
+        if self.auto_reconnect && code == CloseCode::Error {
+            let rand_secs = rand::thread_rng().gen_range(5..6);
+            self.tx.send(Message::Reconnect(chrono::Utc::now() + Duration::seconds(rand_secs)))
+                .expect("Failed to send");
         }
 
         debug!("Connection closing due to ({:?}) {}", code, reason);
@@ -123,6 +135,9 @@ impl WebSocketAdapter {
 
             rx_message: None,
             tx_message: None,
+
+            addr: "".to_owned(),
+            reconnect_on: RefCell::new(None),
         }
     }
 }
@@ -180,7 +195,8 @@ impl SocketAdapter for WebSocketAdapter {
     }
 
     fn close(&mut self) {
-        self.tx_message.unwrap().close(CloseCode::Normal);
+        self.tx_message.as_ref().unwrap().close(CloseCode::Normal)
+            .expect("Failed to close socket");
     }
 
     fn connect(&mut self, addr: &str, _timeout: i32) {
@@ -188,16 +204,17 @@ impl SocketAdapter for WebSocketAdapter {
         let (tx_init, rx_init) = mpsc::channel();
 
         let addr = addr.to_owned();
+        self.addr = addr.clone();
 
         std::thread::spawn({
             move || {
                 qws::connect(addr.clone(), |out| {
-                    let response = tx_init.send(out);
+                    let response = tx_init.send(out.clone());
                     if let Err(err) = response {
                         error!("connect (Thread): Error sending data {}", err);
                     }
-                    return WebSocketClient { tx: tx.clone(), url: addr, auto_reconnect: false };
-                })
+                    return WebSocketClient { tx: tx.clone(), auto_reconnect: true };
+                }).expect("Failed to connect")
             }
         });
 
@@ -218,6 +235,16 @@ impl SocketAdapter for WebSocketAdapter {
     }
 
     fn tick(&self) {
+        let reconnect_on = self.reconnect_on.borrow_mut().take();
+        if let Some(reconnect_on) = reconnect_on {
+            if Utc::now().ge(&reconnect_on) {
+                let mut addr = url::Url::parse(&self.addr).expect("Failed to parse url");
+                addr.set_port(addr.port().map(|port| port + 1));
+                self.tx_message.as_ref().unwrap().connect(addr).expect("Failed to re-connect");
+            }
+            *self.reconnect_on.borrow_mut() = Some(reconnect_on);
+        }
+
         if let Some(ref rx) = self.rx_message {
             while let Ok(data) = rx.try_recv() {
                 match data {
@@ -240,6 +267,9 @@ impl SocketAdapter for WebSocketAdapter {
                         if let Some(ref cb) = self.on_closed {
                             cb();
                         }
+                    },
+                    Message::Reconnect(reconnect_on) => {
+                        *self.reconnect_on.borrow_mut() = Some(reconnect_on);
                     }
                 }
             }
@@ -252,6 +282,7 @@ mod test {
     use super::*;
     use std::thread::sleep;
     use std::time::Duration;
+    use oneshot::channel;
 
     #[test]
     fn test() {
@@ -268,5 +299,64 @@ mod test {
         sleep(Duration::from_secs(1));
         println!("Tick!");
         socket_adapter.tick();
+    }
+
+    #[test]
+    fn test_reconnect() {
+        let mut socket_adapter = WebSocketAdapter::new();
+
+        spawn(|| {
+            let server = qws::listen("127.0.0.1:3000", |out| {
+                  move |msg| {
+                      out.shutdown();
+                      println!("Closing!");
+                      Ok(())
+                  }
+            }).expect("Failed to listen");
+
+            println!("Closed!");
+            sleep(Duration::from_secs(5));
+
+            let server = qws::listen("127.0.0.1:3001", |out| {
+                move |msg| {
+                    out.close(CloseCode::Error);
+                    out.shutdown()
+                }
+            }).expect("Failed to listen");
+        });
+
+        let (tx_connected, rx_connected) = mpsc::channel();
+        let (tx_received, rx_received) = mpsc::channel();
+
+        socket_adapter.on_connected(move || {
+           tx_connected.send(()).expect("Failed to send");
+        });
+        socket_adapter.on_received(move |data| {
+            // println!("{:?}", data);
+            tx_received.send(data);
+        });
+        socket_adapter.connect("ws://127.0.0.1:3000", -1);
+
+        loop {
+            sleep(Duration::from_millis(16));
+            socket_adapter.tick();
+            if let Ok(()) = rx_connected.try_recv() {
+                break;
+            }
+        }
+
+        socket_adapter.send("Hello World!", false);
+
+        // sleep(Duration::from_secs(10));
+
+        loop {
+            sleep(Duration::from_millis(16));
+            socket_adapter.tick();
+            if let Ok(()) = rx_connected.try_recv() {
+                break;
+            }
+        }
+
+        println!("Finished")
     }
 }
