@@ -556,7 +556,23 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
     }
 
-    /// TODO: Undocumented?
+    /// Accept a join request.
+    ///
+    /// If the party is private, the party leader can accept or reject join requests.
+    ///
+    /// The user presence can be received by calling [`Self::list_party_join_requests`].
+    ///
+    /// # Example
+    /// ```
+    /// #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// let join_requests = socket.list_party_join_requests("party_id").await.expect("Failed to list join requests");
+    /// for presence in join_requests.presences.iter() {
+    ///     socket.accept_party_member("party_id", presence).await.expect("Failed to accept party member")
+    /// }
+    /// # })
+    /// ```
     async fn accept_party_member(
         &self,
         party_id: &str,
@@ -616,7 +632,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         .await
     }
 
-    /// TODO: Undocumented?
+    /// Join the matchmaker pool and search for opponents on the server as a party.
     async fn add_matchmaker_party(
         &self,
         party_id: &str,
@@ -644,7 +660,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(envelope.party_matchmaker_ticket.unwrap())
     }
 
-    /// TODO: Undocumented?
+    /// Close the party.
+    ///
+    /// Only the party leader can close a party.
+    ///
+    /// # Example
+    /// ```
+    /// #![feature(async_closure)]
+    /// # use nakama_rs::test_helpers::*;
+    /// # run_in_socket_example(async move |client, session, socket| {
+    /// socket.close_party("party_id").await.expect("Failed to close party");
+    /// # })
+    /// ```
     async fn close_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_close = Some(PartyClose {
