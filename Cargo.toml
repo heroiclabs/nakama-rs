@@ -16,7 +16,7 @@ async-trait = "0.1.50"
 oneshot = "0.1.2"
 log = "0.4.14"
 isahc = "1.4.0"
-qws = { version = "0.7.9", features = ["ssl"] }
+qws = { version = "0.7.9", features = ["nativetls"] }
 
 [dev-dependencies]
 simple_logger = "1.11.0"
