@@ -435,7 +435,6 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Authenticate a user with Apple Game Center
     ///
     /// See [Game center](https://heroiclabs.com/docs/authentication/#game-center) on how to set up authentication using the Apple Game Center.
-    /// todo! The documentation doesn't help here
     ///
     /// See [Authentication](index.html#authentication) for a description of the `username`, `create` and `vars` parameters.
     ///
@@ -1170,7 +1169,6 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     /// Link a Game Center profile to the social profiles on the current user's account.
     ///
     /// See [Game center](https://heroiclabs.com/docs/authentication/#game-center) on how to set up authentication using the Apple Game Center.
-    /// todo! The documentation doesn't help here
     ///
     /// # Example
     /// ```
@@ -1270,7 +1268,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     ///
     /// The chat channel id can be retrieved by using [`Socket::join_chat`].
     ///
-    /// TODO: How does forward work?
+    /// Specify `forward` to set the direction of the pagination.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor` parameters.
     ///
@@ -1683,9 +1681,14 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         self.send(request).await
     }
 
-    /// List current or upcoming
+    /// List current or upcoming tournaments
     ///
-    /// TODO: Document all
+    /// Use `category_start` and `category_end` to filter based on the category that is set on the server on tournament creation. The category value is between 0 and 127.
+    ///
+    /// Omitting the start and end time parameters returns the ongoing and future tournaments.
+    /// Setting the end time parameter to 0 only includes tournaments with no end time set in the results.
+    /// Setting end time to a > 0 unix timestamp acts as an upper bound and only returns tournaments that end prior to it (excluding tournaments with no end time).
+    /// Setting the start time to a > 0 unix timestamp returns any tournaments that start at a later time than it.
     ///
     /// See [Limit and cursor](index.html#limit-and-cursor) for a description on how to use the `limit` and `cursor`.
     ///

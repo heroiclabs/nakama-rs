@@ -693,7 +693,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
     /// Connect to the server.
     ///
-    /// TODO: Document parameters.
+    /// If `appear_online` is false, no status updates will be sent to other clients.
+    ///
     /// # Example
     /// ```
     /// # #![feature(async_closure)]
@@ -813,9 +814,18 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.status.unwrap())
     }
+
     /// Join a chat channel on the server.
     ///
-    /// TODO: Documentation
+    /// There are three channel types. Room (1), DirectMessage (2) and Group (3).
+    /// The `room_name` is the user id for a direct message, the group id for a group message and the room name otherwise.
+    ///
+    /// Set `persistence` to `false` to only receive messages while online.
+    /// Otherwise messages sent through channels are saved to the database and available in the message history later.
+    ///
+    /// Set `hidden` to `true` to hide your channel presence when connecting, so you will not generate join/leave notifications
+    /// and will not appear in listings of channel members. You can still send and receive messages.
+    ///
     /// # Example
     /// ```
     /// # #![feature(async_closure)]
