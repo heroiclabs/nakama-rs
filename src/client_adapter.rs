@@ -17,8 +17,13 @@ use async_trait::async_trait;
 use nanoserde::DeJson;
 use std::error::Error;
 
+pub trait ClientAdapterError: Error {
+   fn is_server_error(&self) -> bool;
+   fn is_client_error(&self) -> bool;
+}
+
 #[async_trait]
 pub trait ClientAdapter {
-    type Error: Error;
+    type Error: ClientAdapterError;
     async fn send<T: DeJson + Send>(&self, request: RestRequest<T>) -> Result<T, Self::Error>;
 }
