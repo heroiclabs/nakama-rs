@@ -55,18 +55,18 @@ use nanoserde::DeJson;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use crate::retry::{RetryHistory, backoff, RetryConfiguration, Retry};
+use crate::retry::{RetryHistory, backoff, RetryConfiguration, Retry, DefaultDelay, Delay};
 use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 use std::sync::{Mutex, Arc};
 use async_recursion::async_recursion;
 use log::debug;
 
-pub struct DefaultClient<A: ClientAdapter> {
+pub struct DefaultClient<A: ClientAdapter, D: Delay = DefaultDelay> {
     adapter: A,
     server_key: String,
     server_password: String,
-    retry_configuration: Arc<Mutex<RetryConfiguration<StdRng>>>,
+    retry_configuration: Arc<Mutex<RetryConfiguration<StdRng, D>>>,
     rng: Arc<Mutex<StdRng>>,
 }
 
@@ -106,8 +106,30 @@ impl DefaultClient<RestHttpAdapter> {
     }
 }
 
-impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
-    pub fn new(adapter: A, server_key: &str, server_password: &str) -> DefaultClient<A> {
+impl<A: ClientAdapter + Send + Sync> DefaultClient<A, DefaultDelay> {
+    pub fn new(adapter: A,
+               server_key: &str,
+               server_password: &str,
+    ) -> DefaultClient<A> {
+        let seed = [1, 0, 0, 0, 23, 0, 0, 0, 200, 1, 0, 0, 210, 30, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        DefaultClient {
+            adapter,
+            server_key: server_key.to_owned(),
+            server_password: server_password.to_owned(),
+            rng: Arc::new(Mutex::new(StdRng::from_seed(seed))),
+            retry_configuration: Arc::new(Mutex::new(RetryConfiguration::new())),
+        }
+    }
+}
+
+
+impl<A: ClientAdapter + Send + Sync, D: Delay + Send> DefaultClient<A, D> {
+    pub fn new_with_configuration(adapter: A,
+               server_key: &str,
+               server_password: &str,
+        retry_configuration: RetryConfiguration<StdRng, D>
+    ) -> DefaultClient<A, D> {
         let seed = [1,0,0,0, 23,0,0,0, 200,1,0,0, 210,30,0,0,
             0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
         DefaultClient {
@@ -115,7 +137,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
             server_key: server_key.to_owned(),
             server_password: server_password.to_owned(),
             rng: Arc::new(Mutex::new(StdRng::from_seed(seed))),
-            retry_configuration: Arc::new(Mutex::new(RetryConfiguration::new())),
+            retry_configuration: Arc::new(Mutex::new(retry_configuration)),
         }
     }
 
@@ -125,7 +147,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
     }
 
     #[async_recursion]
-    pub async fn _send_with_retry<T: DeJson + Send + Clone, R: Rng + Send>(&self, request: RestRequest<T>, retry_history: RetryHistory<R>, rng: Arc<Mutex<R>>) -> Result<T, DefaultClientError<A>>
+    pub async fn _send_with_retry<T: DeJson + Send + Clone, R: Rng + Send>(&self, request: RestRequest<T>, retry_history: RetryHistory<R, D>, rng: Arc<Mutex<R>>) -> Result<T, DefaultClientError<A>>
     {
         {
             let fut = self.send(request.clone());
@@ -220,7 +242,7 @@ impl<A: ClientAdapter> Display for DefaultClientError<A> {
 impl<A: ClientAdapter> Error for DefaultClientError<A> {}
 
 #[async_trait]
-impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
+impl<A: ClientAdapter + Sync + Send, D: Delay + Send> Client for DefaultClient<A, D> {
     type Error = DefaultClientError<A>;
 
     /// Add friends by id or username.
