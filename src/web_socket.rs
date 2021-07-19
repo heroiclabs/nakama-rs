@@ -39,6 +39,7 @@ use crate::web_socket_adapter::WebSocketAdapter;
 use oneshot;
 use oneshot::RecvError;
 use std::fmt::{Debug, Display, Formatter};
+use rand::rngs::StdRng;
 
 pub enum WebSocketError<A: SocketAdapter> {
     AdapterError(A::Error),
@@ -248,8 +249,8 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
 }
 
 impl WebSocket<WebSocketAdapter> {
-    pub fn new_with_adapter() -> Self {
-        let adapter = WebSocketAdapter::new();
+    pub fn new_with_adapter(rng: StdRng) -> Self {
+        let adapter = WebSocketAdapter::new(rng);
         WebSocket::new(adapter)
     }
 }

@@ -16,13 +16,14 @@ pub struct Retry {
     exponential_backoff: i32,
 
     /// The delay (milliseconds) in the request retry attributable to the jitter algorithm.
-    jitter_backoff: i32
+    pub jitter_backoff: i32
 }
 
-pub trait Delay {
+pub trait Delay: Clone {
     fn delay(ms: u64) -> Pin<Box<dyn Future<Output = ()> + Send>>;
 }
 
+#[derive(Clone)]
 pub struct DefaultDelay {
 }
 
@@ -63,7 +64,7 @@ impl<D: Delay> RetryConfiguration<StdRng, D> {
     pub fn new() -> RetryConfiguration<StdRng, D> {
         // let jitter = full_jitter::<StdRng>;
         RetryConfiguration {
-            base_delay: 500,
+            base_delay: 50,
             jitter: Box::new(full_jitter),
             max_attempts: 4,
             retry_listener: None,
@@ -72,6 +73,7 @@ impl<D: Delay> RetryConfiguration<StdRng, D> {
     }
 }
 
+#[derive(Clone)]
 pub struct RetryHistory<R: Rng + Send, D: Delay> {
     pub retry_configuration: Arc<Mutex<RetryConfiguration<R, D>>>,
     pub retries: Arc<Mutex<Vec<Retry>>>,
@@ -85,7 +87,7 @@ impl<R: Rng + Send, D: Delay> RetryHistory<R, D> {
         }
     }
 
-    fn new_retry(history: &RetryHistory<R, D>, rng: &mut R) -> Retry {
+    pub fn new_retry(history: &RetryHistory<R, D>, rng: &mut R) -> Retry {
         let retries = history.retries.lock().expect("Failed to lock mutex");
         let retry_configuration = history.retry_configuration.lock().expect("Failed to lock mutex");
         let new_count = retries.len() + 1;
@@ -118,14 +120,14 @@ pub async fn backoff<R: Rng + Send, D: Delay>(history: RetryHistory<R, D>, rng: 
     };
     new_history.retries.lock().expect("Failed to lock mutex").push(new_retry.clone());
 
+    D::delay(new_retry.jitter_backoff as u64).await;
+
     let config = new_history.retry_configuration.clone();
     {
         if let Some(ref cb) = config.lock().expect("Failed to lock mutex").retry_listener {
             cb();
         }
     }
-
-    D::delay(new_retry.jitter_backoff as u64).await;
 
     new_history
 }
