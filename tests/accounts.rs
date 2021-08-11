@@ -22,11 +22,11 @@ fn test_get_account() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("somedeviceid", Some("TestUser"), true, HashMap::new())
             .await?;
 
-        client.get_account(&mut session).await
+        client.get_account(&session).await
     });
 
     println!("Result: {:?}", result);
@@ -40,13 +40,13 @@ fn test_update_account() {
     let client = DefaultClient::new_with_adapter_and_defaults();
 
     let result = block_on(async {
-        let mut session = client
+        let session = client
             .authenticate_device("somedeviceid", Some("TestUser"), true, HashMap::new())
             .await?;
 
         client
             .update_account(
-                &mut session,
+                &session,
                 "TestUser",
                 Some("DisplayName"),
                 Some("url://avatar"),
@@ -56,7 +56,7 @@ fn test_update_account() {
             )
             .await?;
 
-        client.get_account(&mut session).await
+        client.get_account(&session).await
     });
 
     println!("Result: {:?}", result);

@@ -38,7 +38,7 @@ async fn socket_with_user(id: &str) -> (Session, WebSocket<WebSocketAdapter>) {
 #[test]
 fn test_status_presence_received_after_connect() {
     block_on(async {
-        let (mut session, mut socket) = socket_with_user("socket_test_user").await;
+        let (session, mut socket) = socket_with_user("socket_test_user").await;
 
         let (tx_presence, rx_presence) = mpsc::channel();
         socket.on_received_status_presence(move |presence| {
@@ -46,7 +46,7 @@ fn test_status_presence_received_after_connect() {
                 .send(presence)
                 .expect("Failed to send status presence");
         });
-        socket.connect(&mut session, true, -1).await;
+        socket.connect(&session, true, -1).await;
 
         let status_presence = rx_presence.recv().expect("Failed to recv status presence");
         println!("Status presence: {:?}", status_presence);
@@ -60,13 +60,13 @@ fn test_on_connected_triggered() {
     let (tx, rx) = mpsc::channel::<()>();
 
     block_on(async {
-        let (mut session, mut socket) = socket_with_user("socket_test_user").await;
+        let (session, mut socket) = socket_with_user("socket_test_user").await;
 
         socket.on_connected(move || {
             tx.send(()).expect("Failed to send connected status");
         });
 
-        socket.connect(&mut session, true, -1).await;
+        socket.connect(&session, true, -1).await;
     });
 
     rx.recv().expect("Failed to receive connected status");

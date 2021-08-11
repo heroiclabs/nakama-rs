@@ -8,6 +8,9 @@ description = "Pure rust nakama protocol implementation"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+test = []
+
 [dependencies]
 base64 = "0.13"
 nanoserde = "0.1.26"
@@ -17,8 +20,11 @@ oneshot = "0.1.2"
 log = "0.4.14"
 isahc = "1.4.0"
 qws = { version = "0.7.9", features = ["nativetls"] }
+chrono = "0.4.19"
+
+#[cfg(feature = "test")]
+futures = "0.3.15"
 
 [dev-dependencies]
 simple_logger = "1.11.0"
 cassette = "0.2.3"
-futures = "0.3.15"

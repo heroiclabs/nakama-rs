@@ -21,10 +21,10 @@ use nakama_rs::session::Session;
 use nakama_rs::test_helpers;
 
 async fn client_with_storage_object() -> (DefaultClient<RestHttpAdapter>, Session) {
-    let (client, mut session) = test_helpers::authenticated_client("storageclientid").await;
+    let (client, session) = test_helpers::authenticated_client("storageclientid").await;
     client
         .write_storage_objects(
-            &mut session,
+            &session,
             &[
                 ApiWriteStorageObject {
                     collection: "Cards".to_owned(),
@@ -53,10 +53,10 @@ async fn client_with_storage_object() -> (DefaultClient<RestHttpAdapter>, Sessio
 #[test]
 fn test_write_storage() {
     block_on(async {
-        let (client, mut session) = test_helpers::authenticated_client("storageclientid").await;
+        let (client, session) = test_helpers::authenticated_client("storageclientid").await;
         let result = client
             .write_storage_objects(
-                &mut session,
+                &session,
                 &[
                     ApiWriteStorageObject {
                         collection: "Cards".to_owned(),
@@ -86,12 +86,12 @@ fn test_write_storage() {
 #[test]
 fn test_read_storage() {
     block_on(async {
-        let (client, mut session) = client_with_storage_object().await;
-        let user_id = client.get_account(&mut session).await.unwrap().user.id;
+        let (client, session) = client_with_storage_object().await;
+        let user_id = client.get_account(&session).await.unwrap().user.id;
 
         let result = client
             .read_storage_objects(
-                &mut session,
+                &session,
                 &[
                     ApiReadStorageObjectId {
                         collection: "Cards".to_owned(),
@@ -115,11 +115,11 @@ fn test_read_storage() {
 #[test]
 fn test_delete_storage() {
     block_on(async {
-        let (client, mut session) = client_with_storage_object().await;
+        let (client, session) = client_with_storage_object().await;
 
         let result = client
             .delete_storage_objects(
-                &mut session,
+                &session,
                 &[
                     ApiDeleteStorageObjectId {
                         collection: "Cards".to_owned(),
@@ -143,15 +143,15 @@ fn test_delete_storage() {
 #[test]
 fn test_list_storage_objects() {
     block_on(async {
-        let (client, mut session) = client_with_storage_object().await;
+        let (client, session) = client_with_storage_object().await;
 
         let result1 = client
-            .list_storage_objects(&mut session, "Cards", Some(1), None)
+            .list_storage_objects(&session, "Cards", Some(1), None)
             .await
             .unwrap();
         assert_eq!(result1.cursor.len() > 0, true);
         let result2 = client
-            .list_storage_objects(&mut session, "Cards", None, Some(&result1.cursor))
+            .list_storage_objects(&session, "Cards", None, Some(&result1.cursor))
             .await;
 
         println!("{:?}", result2);
@@ -163,22 +163,16 @@ fn test_list_storage_objects() {
 #[test]
 fn test_list_users_storage_objects() {
     block_on(async {
-        let (client, mut session) = client_with_storage_object().await;
-        let user_id = client.get_account(&mut session).await.unwrap().user.id;
+        let (client, session) = client_with_storage_object().await;
+        let user_id = client.get_account(&session).await.unwrap().user.id;
 
         let result1 = client
-            .list_users_storage_objects(&mut session, "Cards", &user_id, Some(1), None)
+            .list_users_storage_objects(&session, "Cards", &user_id, Some(1), None)
             .await
             .unwrap();
         assert_eq!(result1.cursor.len() > 0, true);
         let result2 = client
-            .list_users_storage_objects(
-                &mut session,
-                "Cards",
-                &user_id,
-                None,
-                Some(&result1.cursor),
-            )
+            .list_users_storage_objects(&session, "Cards", &user_id, None, Some(&result1.cursor))
             .await;
 
         println!("{:?}", result2);

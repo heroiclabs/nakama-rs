@@ -13,11 +13,9 @@
 // limitations under the License.
 
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Sender};
 use std::sync::Arc;
-use std::thread::sleep;
+use std::thread::{sleep, spawn};
 use std::time::Duration;
 
 use futures::executor::block_on;
@@ -31,44 +29,6 @@ use nakama_rs::socket::Socket;
 use nakama_rs::web_socket::WebSocket;
 use nakama_rs::web_socket_adapter::WebSocketAdapter;
 
-// Use a thread to receive futures that should be awaited. A channel is used to communicate with the
-// thread. The channel will receive futures from another thread, see `do_some_chatting`.
-// A second channel is used to kill the thread.
-// A third channel could be used to return the result of the future when available (e.g. a command)
-// This is something the user of the library would need to implement themselves, as it depends on the async runtime used.
-fn spawn_network_thread() -> (
-    Sender<Pin<Box<dyn Future<Output = ()> + Send>>>,
-    Sender<()>,
-    Receiver<()>,
-) {
-    let (tx, rx) = channel::<Pin<Box<dyn Future<Output = ()> + Send>>>();
-    let (tx_response, rx_response) = channel::<()>();
-    let (tx_kill, rx_kill) = channel::<()>();
-    std::thread::spawn({
-        move || loop {
-            let future = rx.try_recv();
-            match future {
-                Ok(future) => {
-                    trace!("Waiting for future");
-                    block_on(future);
-                    trace!("Future received!");
-                    tx_response.send(()).expect("Failed to send");
-                }
-                Err(_) => {}
-            }
-
-            let kill = rx_kill.try_recv();
-            if kill.is_ok() {
-                return;
-            }
-
-            sleep(Duration::from_millis(100));
-        }
-    });
-
-    (tx, tx_kill, rx_response)
-}
-
 fn main() {
     SimpleLogger::new()
         .with_level(LevelFilter::Off)
@@ -77,13 +37,11 @@ fn main() {
         .unwrap();
 
     let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
-    let client = DefaultClient::new(http_adapter);
+    let client = DefaultClient::new(http_adapter, "defaultkey", "");
     let adapter = WebSocketAdapter::new();
     let adapter2 = WebSocketAdapter::new();
     let web_socket = Arc::new(WebSocket::new(adapter));
     let web_socket2 = Arc::new(WebSocket::new(adapter2));
-
-    let (send_futures, kill_network_thread, rx_response) = spawn_network_thread();
 
     let (kill_tick, rc_kill) = channel();
     std::thread::spawn({
@@ -108,7 +66,7 @@ fn main() {
         }
     });
 
-    let setup = {
+    block_on({
         async {
             let session = client
                 .authenticate_device("testdeviceid", None, true, HashMap::new())
@@ -116,35 +74,15 @@ fn main() {
             let session2 = client
                 .authenticate_device("testdeviceid2", None, true, HashMap::new())
                 .await;
-            let mut session = session.unwrap();
-            let mut session2 = session2.unwrap();
-            web_socket.connect(&mut session, true, -1).await;
-            web_socket2.connect(&mut session2, true, -1).await;
+            let session = session.unwrap();
+            let session2 = session2.unwrap();
+            web_socket.connect(&session, true, -1).await;
+            web_socket2.connect(&session2, true, -1).await;
         }
-    };
+    });
 
-    block_on(setup);
-    //
-    // let error_handling_example = async {
-    //     // This will fail and return an error. `testdeviceid4` will not be created.
-    //     client
-    //         .authenticate_device("testdeviceid3", None, false, HashMap::new())
-    //         .await?;
-    //     client
-    //         .authenticate_device("testdeviceid4", None, true, HashMap::new())
-    //         .await?;
-    //     Ok(())
-    // };
-    //
-    // let result: Result<(), <DefaultClient<RestHttpAdapter> as Client>::Error> =
-    //     block_on(error_handling_example);
-    // println!("{:?}", result);
-
-    // Box::pin is necessary so that we can send the future to the network thread
-    let do_some_chatting = Box::pin({
-        let web_socket = web_socket.clone();
-        let web_socket2 = web_socket2.clone();
-        async move {
+    let do_some_chatting = spawn(move || {
+        block_on(async move {
             web_socket
                 .join_chat("MyRoom", 1, false, false)
                 .await
@@ -157,16 +95,10 @@ fn main() {
                 .write_chat_message(&channel.id, "{\"text\":\"Hello World!\"}")
                 .await
                 .expect("Failed to write chat message");
-        }
+        })
     });
 
-    send_futures
-        .send(do_some_chatting)
-        .expect("Failed to send future");
-    rx_response
-        .recv()
-        .expect("Failed to receive future response");
+    do_some_chatting.join().expect("Failed to join thread");
 
     kill_tick.send(()).expect("Failed to send kill");
-    kill_network_thread.send(()).expect("Failed to send kill");
 }
