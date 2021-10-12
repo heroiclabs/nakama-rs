@@ -244,8 +244,11 @@ pub mod socket;
 pub mod socket_adapter;
 #[cfg(feature = "test")]
 pub mod test_helpers;
+#[cfg(feature = "test")]
+pub mod mock_adapter;
 pub mod web_socket;
 pub mod web_socket_adapter;
+pub mod retry;
 
 pub use client::Client;
 pub use default_client::DefaultClient;

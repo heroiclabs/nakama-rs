@@ -17,7 +17,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::api;
-use crate::client_adapter::ClientAdapter;
+use crate::client_adapter::{ClientAdapter, ClientAdapterError};
 use async_trait::async_trait;
 use isahc::prelude::*;
 use nanoserde::{DeJson, DeJsonErr};
@@ -31,6 +31,22 @@ pub enum RestHttpError {
     ClientError(u16, String),
     ServerError(u16, String),
     OtherError(String),
+}
+
+impl ClientAdapterError for RestHttpError {
+    fn is_server_error(&self) -> bool {
+        match self {
+            RestHttpError::ServerError(_, _) => true,
+            _ => false
+        }
+    }
+
+    fn is_client_error(&self) -> bool {
+        match self {
+            RestHttpError::ClientError(_, _) => true,
+            _ => false
+        }
+    }
 }
 
 impl Display for RestHttpError {

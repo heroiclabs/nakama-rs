@@ -46,7 +46,7 @@ use crate::api::{
 };
 use crate::api_gen::{ApiSession, ApiWriteStorageObjectsRequest};
 use crate::client::Client;
-use crate::client_adapter::ClientAdapter;
+use crate::client_adapter::{ClientAdapter, ClientAdapterError};
 use crate::config::{DEFAULT_HOST, DEFAULT_PORT, DEFAULT_SERVER_KEY, DEFAULT_SERVER_PASSWORD};
 use crate::http_adapter::RestHttpAdapter;
 use crate::session::Session;
@@ -55,11 +55,19 @@ use nanoserde::DeJson;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use crate::retry::{RetryHistory, backoff, RetryConfiguration, Retry, DefaultDelay, Delay};
+use rand::{Rng, SeedableRng};
+use rand::rngs::StdRng;
+use std::sync::{Mutex, Arc};
+use async_recursion::async_recursion;
+use log::debug;
 
-pub struct DefaultClient<A: ClientAdapter> {
+pub struct DefaultClient<A: ClientAdapter, D: Delay = DefaultDelay> {
     adapter: A,
     server_key: String,
     server_password: String,
+    retry_configuration: Arc<Mutex<RetryConfiguration<StdRng, D>>>,
+    rng: Arc<Mutex<StdRng>>,
 }
 
 impl<A: ClientAdapter + Clone> Clone for DefaultClient<A> {
@@ -68,6 +76,8 @@ impl<A: ClientAdapter + Clone> Clone for DefaultClient<A> {
             adapter: self.adapter.clone(),
             server_key: self.server_key.clone(),
             server_password: self.server_password.clone(),
+            retry_configuration: self.retry_configuration.clone(),
+            rng: self.rng.clone(),
         }
     }
 }
@@ -96,13 +106,76 @@ impl DefaultClient<RestHttpAdapter> {
     }
 }
 
-impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
-    pub fn new(adapter: A, server_key: &str, server_password: &str) -> DefaultClient<A> {
+impl<A: ClientAdapter + Send + Sync> DefaultClient<A, DefaultDelay> {
+    pub fn new(adapter: A,
+               server_key: &str,
+               server_password: &str,
+    ) -> DefaultClient<A> {
+        let seed = [1, 0, 0, 0, 23, 0, 0, 0, 200, 1, 0, 0, 210, 30, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         DefaultClient {
             adapter,
             server_key: server_key.to_owned(),
             server_password: server_password.to_owned(),
+            rng: Arc::new(Mutex::new(StdRng::from_seed(seed))),
+            retry_configuration: Arc::new(Mutex::new(RetryConfiguration::new())),
         }
+    }
+}
+
+
+impl<A: ClientAdapter + Send + Sync, D: Delay + Send> DefaultClient<A, D> {
+    pub fn new_with_configuration(adapter: A,
+               server_key: &str,
+               server_password: &str,
+        retry_configuration: RetryConfiguration<StdRng, D>
+    ) -> DefaultClient<A, D> {
+        let seed = [1,0,0,0, 23,0,0,0, 200,1,0,0, 210,30,0,0,
+            0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
+        DefaultClient {
+            adapter,
+            server_key: server_key.to_owned(),
+            server_password: server_password.to_owned(),
+            rng: Arc::new(Mutex::new(StdRng::from_seed(seed))),
+            retry_configuration: Arc::new(Mutex::new(retry_configuration)),
+        }
+    }
+
+    pub async fn send_with_retry<T: DeJson + Send + Clone>(&self, request: RestRequest<T>) -> Result<T, DefaultClientError<A>> {
+       let history = RetryHistory::new(self.retry_configuration.clone());
+        self._send_with_retry(request, history, self.rng.clone()).await
+    }
+
+    #[async_recursion]
+    pub async fn _send_with_retry<T: DeJson + Send + Clone, R: Rng + Send>(&self, request: RestRequest<T>, retry_history: RetryHistory<R, D>, rng: Arc<Mutex<R>>) -> Result<T, DefaultClientError<A>>
+    {
+        {
+            let fut = self.send(request.clone());
+            let result = fut.await;
+            let retry = match result {
+                Ok(result) => return Ok(result),
+                Err(DefaultClientError::HttpAdapterError(ref err)) if err.is_client_error() || err.is_server_error() => {
+                    true
+                },
+                Err(err) => return Err(err)
+            };
+
+            if !retry {
+                return result;
+            }
+
+            let len = retry_history.retries.lock().expect("Failed to lock mutex").len();
+            let max_attempts = retry_history.retry_configuration.lock().expect("Failed to lock mutex").max_attempts;
+            if len >= max_attempts {
+                debug!("Exceeded {} retries.", max_attempts);
+                return result
+            }
+        }
+
+        debug!("Retrying request {}.", request.urlpath);
+
+        let new_history = backoff(retry_history, rng.clone()).await;
+        self._send_with_retry(request, new_history, rng).await
     }
 
     #[inline]
@@ -169,7 +242,7 @@ impl<A: ClientAdapter> Display for DefaultClientError<A> {
 impl<A: ClientAdapter> Error for DefaultClientError<A> {}
 
 #[async_trait]
-impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
+impl<A: ClientAdapter + Sync + Send, D: Delay + Send> Client for DefaultClient<A, D> {
     type Error = DefaultClientError<A>;
 
     /// Add friends by id or username.
@@ -337,7 +410,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             username,
         );
 
-        self.send(request)
+        self.send_with_retry(request)
             .await
             .map(DefaultClient::<A>::map_session)
     }
