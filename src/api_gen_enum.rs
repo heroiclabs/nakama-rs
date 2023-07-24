@@ -26,7 +26,7 @@ impl DeJson for ApiOverrideOperator {
     fn de_json(state: &mut DeJsonState, input: &mut Chars) -> Result<Self, DeJsonErr> {
         let value: i32 = DeJson::de_json(state, input)?;
         match value {
-            0 => Ok(ApiOverrideOperator::NO_OVERRIDE),
+            0 => Ok(ApiOverrideOperator::NoOverride),
             1 => Ok(ApiOverrideOperator::BEST),
             2 => Ok(ApiOverrideOperator::SET),
             3 => Ok(ApiOverrideOperator::INCREMENT),
@@ -43,7 +43,7 @@ impl DeJson for ApiOverrideOperator {
 
 impl Default for ApiOverrideOperator {
     fn default() -> Self {
-        ApiOverrideOperator::NO_OVERRIDE
+        ApiOverrideOperator::NoOverride
     }
 }
 
@@ -86,9 +86,9 @@ impl DeJson for ValidatedPurchaseStore {
     fn de_json(state: &mut DeJsonState, input: &mut Chars) -> Result<Self, DeJsonErr> {
         let value: i32 = DeJson::de_json(state, input)?;
         match value {
-            0 => Ok(ValidatedPurchaseStore::APPLE_APP_STORE),
-            1 => Ok(ValidatedPurchaseStore::GOOGLE_PLAY_STORE),
-            2 => Ok(ValidatedPurchaseStore::HUAWEI_APP_GALLERY),
+            0 => Ok(ValidatedPurchaseStore::AppleAppStore),
+            1 => Ok(ValidatedPurchaseStore::GooglePlayStore),
+            2 => Ok(ValidatedPurchaseStore::HuaweiAppGallery),
             // TODO: macro for line number
             _ => Err(DeJsonErr {
                 col: 0,
@@ -101,6 +101,6 @@ impl DeJson for ValidatedPurchaseStore {
 
 impl Default for ValidatedPurchaseStore {
     fn default() -> Self {
-        ValidatedPurchaseStore::APPLE_APP_STORE
+        ValidatedPurchaseStore::AppleAppStore
     }
 }

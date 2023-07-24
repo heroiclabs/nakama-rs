@@ -46,7 +46,9 @@ fn test_status_presence_received_after_connect() {
                 .send(presence)
                 .expect("Failed to send status presence");
         });
-        socket.connect(&session, true, -1).await;
+        socket
+            .connect("ws://127.0.0.1:7350", &session, true, -1)
+            .await;
 
         let status_presence = rx_presence.recv().expect("Failed to recv status presence");
         println!("Status presence: {:?}", status_presence);
@@ -66,7 +68,9 @@ fn test_on_connected_triggered() {
             tx.send(()).expect("Failed to send connected status");
         });
 
-        socket.connect(&session, true, -1).await;
+        socket
+            .connect("ws://127.0.0.1:7350", &session, true, -1)
+            .await;
     });
 
     rx.recv().expect("Failed to receive connected status");

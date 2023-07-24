@@ -126,10 +126,12 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
     ) -> Result<(), <DefaultClient<A> as Client>::Error> {
         let refresh_token = session.get_refresh_token();
         let vars = session.vars();
-        let vars = vars.iter().map(|(key, val)| (key.as_str(), val.as_str())).collect();
-        if session.get_auto_refresh() && refresh_token.is_some()
-            && session.will_expire_soon() {
-            return self.session_refresh(session, vars).await
+        let vars = vars
+            .iter()
+            .map(|(key, val)| (key.as_str(), val.as_str()))
+            .collect();
+        if session.get_auto_refresh() && refresh_token.is_some() && session.will_expire_soon() {
+            return self.session_refresh(session, vars).await;
         }
 
         Ok(())
@@ -1964,7 +1966,9 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         session: &Session,
         vars: HashMap<&str, &str>,
     ) -> Result<(), Self::Error> {
-        let refresh_token = session.get_refresh_token().expect("Session refresh can only be called when a refresh token is available");
+        let refresh_token = session
+            .get_refresh_token()
+            .expect("Session refresh can only be called when a refresh token is available");
         let request = api::session_refresh(
             &self.server_key,
             &self.server_password,
@@ -1974,8 +1978,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             },
         );
 
-        let data = self.send(request)
-            .await?;
+        let data = self.send(request).await?;
 
         session.replace(&data.token, &data.refresh_token);
 
@@ -2388,7 +2391,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
-        let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
+        let operator = override_operator.unwrap_or(ApiOverrideOperator::NoOverride);
         let request = api::write_leaderboard_record(
             &session.get_auth_token(),
             leaderboard_id,
@@ -2483,7 +2486,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
-        let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
+        let operator = override_operator.unwrap_or(ApiOverrideOperator::NoOverride);
         let request = api::write_tournament_record(
             &session.get_auth_token(),
             tournament_id,

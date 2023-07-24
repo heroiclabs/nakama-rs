@@ -2,29 +2,31 @@
 name = "nakama-rs"
 version = "0.1.1"
 authors = ["Fedor Logachev <not.fl3@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT/Apache-2.0"
 description = "Pure rust nakama protocol implementation"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
 test = []
 
 [dependencies]
-base64 = "0.13"
-nanoserde = "0.1.26"
+base64 = "0.21.2"
+nanoserde = "0.1.32"
 urlencoding = "2.0.0-alpha.1"
-async-trait = "0.1.50"
-oneshot = "0.1.2"
-log = "0.4.14"
-isahc = "1.4.0"
-qws = { version = "0.7.9", features = ["nativetls"] }
-chrono = "0.4.19"
-
-#[cfg(feature = "test")]
+async-trait = "0.1.71"
+log = "0.4.19"
+isahc = "1.7.2"
+ws = { version = "0.9.2" }
+chrono = { version = "0.4.26", features = ["serde"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive", "rc"] }
+parking_lot = { version = "0.12.1", features = ["serde", "arc_lock"] }
 futures = "0.3.15"
+hyper = "=0.13.10"
+
 
 [dev-dependencies]
 simple_logger = "1.11.0"
 cassette = "0.2.3"
+anyhow = "1.0.71"

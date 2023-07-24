@@ -16,7 +16,10 @@ use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc
 use crate::matchmaker::Matchmaker;
 use crate::session::Session;
 use async_trait::async_trait;
+use base64::engine::general_purpose;
+use base64::Engine;
 use nanoserde::{DeJson, DeJsonErr, DeJsonState, SerJson};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error;
 use std::str::Chars;
@@ -202,21 +205,22 @@ pub struct MatchmakerAdd {
     pub numeric_properties: HashMap<String, f64>,
 }
 
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
+#[derive(DeJson, SerJson, Debug, Clone, Default, Deserialize, Serialize)]
 pub struct MatchmakerUser {
     pub presence: UserPresence,
-    pub party_id: String,
-    pub string_properties: HashMap<String, String>,
-    pub numeric_properties: HashMap<String, f64>,
+    pub party_id: Option<String>,
+    pub string_properties: Option<HashMap<String, String>>,
+    pub numeric_properties: Option<HashMap<String, f64>>,
 }
 
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
+#[derive(DeJson, SerJson, Debug, Clone, Default, Deserialize, Serialize)]
 pub struct MatchmakerMatched {
     pub ticket: String,
     pub match_id: Option<String>,
     pub token: Option<String>,
     pub users: Vec<MatchmakerUser>,
     #[nserde(rename = "self")]
+    #[serde(rename = "self")]
     pub _self: MatchmakerUser,
 }
 
@@ -235,13 +239,14 @@ pub struct Notifications {
     pub notifications: Vec<ApiNotification>,
 }
 
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
+#[derive(DeJson, SerJson, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Party {
     pub party_id: String,
     #[nserde(default)]
     pub open: bool,
     pub max_size: i32,
     #[nserde(rename = "self")]
+    #[serde(rename = "self")]
     pub _self: UserPresence,
     pub leader: UserPresence,
     pub presences: Vec<UserPresence>,
@@ -346,7 +351,7 @@ pub struct PartyDataProxy {
 impl DeJson for PartyData {
     fn de_json(state: &mut DeJsonState, input: &mut Chars) -> Result<Self, DeJsonErr> {
         let proxy: PartyDataProxy = DeJson::de_json(state, input)?;
-        let data = base64::decode(proxy.data);
+        let data = general_purpose::STANDARD.decode(proxy.data);
         match data {
             Ok(data) => Ok(PartyData {
                 party_id: proxy.party_id,
@@ -442,7 +447,7 @@ pub struct StreamPresenceEvent {
     pub leaves: Vec<UserPresence>,
 }
 
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
+#[derive(DeJson, SerJson, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct UserPresence {
     #[nserde(default)]
     pub persistence: bool,
@@ -621,7 +626,13 @@ pub trait Socket {
 
     async fn close(&self) -> Result<(), Self::Error>;
 
-    async fn connect(&self, session: &Session, appear_online: bool, connect_timeout: i32);
+    async fn connect(
+        &self,
+        addr: &str,
+        session: &Session,
+        appear_online: bool,
+        connect_timeout: i32,
+    );
 
     async fn create_match(&self) -> Result<Match, Self::Error>;
 
@@ -724,3 +735,4 @@ pub trait Socket {
         content: &str,
     ) -> Result<ChannelMessageAck, Self::Error>;
 }
+

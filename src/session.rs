@@ -12,26 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::{Arc, Mutex};
+use base64::engine::general_purpose;
+use base64::Engine;
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use nanoserde::DeJson;
+use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc, TimeZone, Duration};
 use std::ops::Add;
+use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Session {
     inner: Arc<Mutex<Inner>>,
 }
 
-#[derive(Debug)]
-struct Inner {
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Inner {
     auth_token: String,
     refresh_token: Option<String>,
     expire_time: DateTime<Utc>,
     refresh_expire_time: Option<DateTime<Utc>>,
     username: String,
     uid: String,
-    vars: Arc<HashMap<String, String>>,
+    vars: HashMap<String, String>,
     auto_refresh: bool,
 }
 
@@ -51,7 +55,7 @@ struct AuthTokenData {
 #[derive(Debug, DeJson)]
 struct RefreshTokenData {
     #[nserde(rename = "exp")]
-    expire_time: u64
+    expire_time: u64,
 }
 
 fn jwt_unpack(jwt: &str) -> Option<String> {
@@ -62,7 +66,7 @@ fn jwt_unpack(jwt: &str) -> Option<String> {
     let payload = format!("{}{}", payload, "=".repeat(pad_length))
         .replace("-", "+")
         .replace("_", "/");
-    let decoded = base64::decode(payload).ok()?;
+    let decoded = general_purpose::STANDARD.decode(payload).ok()?;
     let utf8 = String::from_utf8(decoded).ok()?;
     Some(utf8)
 }
@@ -70,13 +74,13 @@ fn jwt_unpack(jwt: &str) -> Option<String> {
 impl Session {
     pub fn new(auth_token: &str, refresh_token: &str) -> Session {
         let auth_token_payload = jwt_unpack(auth_token).expect("Failed to parse session");
-        let refresh_expire_time = jwt_unpack(refresh_token)
-            .and_then(|refresh_token| {
-                let data = RefreshTokenData::deserialize_json(&refresh_token).ok()?;
-                Some(Utc.timestamp(data.expire_time as i64, 0))
-            });
+        let refresh_expire_time = jwt_unpack(refresh_token).and_then(|refresh_token| {
+            let data = RefreshTokenData::deserialize_json(&refresh_token).ok()?;
+            Some(Utc.timestamp_opt(data.expire_time as i64, 0).unwrap())
+        });
 
-        let auth_token_data = AuthTokenData::deserialize_json(&auth_token_payload).expect("Failed to parse session");
+        let auth_token_data =
+            AuthTokenData::deserialize_json(&auth_token_payload).expect("Failed to parse session");
 
         Session {
             inner: Arc::new(Mutex::new(Inner {
@@ -87,25 +91,27 @@ impl Session {
                     Some(refresh_token.to_owned())
                 },
                 refresh_expire_time,
-                expire_time: Utc.timestamp(auth_token_data.expire_time as i64, 0),
+                expire_time: Utc
+                    .timestamp_opt(auth_token_data.expire_time as i64, 0)
+                    .unwrap(),
                 username: auth_token_data.username,
                 uid: auth_token_data.uid,
-                vars: Arc::new(auth_token_data.vars),
+                vars: auth_token_data.vars,
                 auto_refresh: true,
             })),
         }
     }
 
     pub fn get_auto_refresh(&self) -> bool {
-        self.inner.lock().unwrap().auto_refresh
+        self.inner.lock().auto_refresh
     }
 
     pub fn set_auto_refresh(&self, auto_refresh: bool) {
-        self.inner.lock().unwrap().auto_refresh = auto_refresh;
+        self.inner.lock().auto_refresh = auto_refresh;
     }
 
     pub fn replace(&self, auth_token: &str, refresh_token: &str) {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.inner.lock();
         inner.auth_token = auth_token.to_owned();
         inner.refresh_token = if refresh_token.len() == 0 {
             None
@@ -115,23 +121,23 @@ impl Session {
     }
 
     pub fn get_auth_token(&self) -> String {
-        self.inner.lock().unwrap().auth_token.clone()
+        self.inner.lock().auth_token.clone()
     }
 
     pub fn get_refresh_token(&self) -> Option<String> {
-        self.inner.lock().unwrap().refresh_token.clone()
+        self.inner.lock().refresh_token.clone()
     }
 
     pub fn expire_time(&self) -> DateTime<Utc> {
-        self.inner.lock().unwrap().expire_time.clone()
+        self.inner.lock().expire_time.clone()
     }
 
     pub fn refresh_expire_time(&self) -> Option<DateTime<Utc>> {
-        self.inner.lock().unwrap().refresh_expire_time.clone()
+        self.inner.lock().refresh_expire_time.clone()
     }
 
     pub fn has_expired(&self, date_time: DateTime<Utc>) -> bool {
-        self.inner.lock().unwrap().expire_time.le(&date_time)
+        self.inner.lock().expire_time.le(&date_time)
     }
 
     pub fn is_expired(&self) -> bool {
@@ -143,7 +149,10 @@ impl Session {
     }
 
     pub fn has_refresh_expired(&self, date_time: DateTime<Utc>) -> bool {
-        self.inner.lock().unwrap().refresh_expire_time.map_or(false, |time| time.le(&date_time))
+        self.inner
+            .lock()
+            .refresh_expire_time
+            .map_or(false, |time| time.le(&date_time))
     }
 
     pub fn is_refresh_expired(&self) -> bool {
@@ -151,22 +160,22 @@ impl Session {
     }
 
     pub fn username(&self) -> String {
-        self.inner.lock().unwrap().username.clone()
+        self.inner.lock().username.clone()
     }
 
     pub fn user_id(&self) -> String {
-        self.inner.lock().unwrap().uid.clone()
+        self.inner.lock().uid.clone()
     }
 
-    pub fn vars(&self) -> Arc<HashMap<String, String>> {
-        self.inner.lock().unwrap().vars.clone()
+    pub fn vars(&self) -> HashMap<String, String> {
+        self.inner.lock().vars.clone()
     }
 }
 
 #[cfg(test)]
 mod test {
     use crate::session::{jwt_unpack, Session};
-    use chrono::{Utc, TimeZone};
+    use chrono::{TimeZone, Utc};
     use std::sync::Arc;
 
     #[test]
@@ -177,11 +186,26 @@ mod test {
         let session = Session::new(auth_token, refresh_token);
         assert_eq!(session.username(), "Username".to_owned());
         assert_eq!(session.user_id(), "12345678".to_owned());
-        assert_eq!(session.vars(), Arc::new([("hello".to_owned(), "world".to_owned()), ("more".to_owned(), "data".to_owned())].iter().cloned().collect()));
+        assert_eq!(
+            session.vars(),
+            [
+                ("hello".to_owned(), "world".to_owned()),
+                ("more".to_owned(), "data".to_owned())
+            ]
+            .iter()
+            .cloned()
+            .collect()
+        );
         assert_eq!(session.is_expired(), true);
         assert_eq!(session.has_expired(Utc.timestamp(1623961673, 0)), false);
-        assert_eq!(session.has_refresh_expired(Utc.timestamp(1623981674, 0)), true);
-        assert_eq!(session.has_refresh_expired(Utc.timestamp(1623981673, 0)), false);
+        assert_eq!(
+            session.has_refresh_expired(Utc.timestamp(1623981674, 0)),
+            true
+        );
+        assert_eq!(
+            session.has_refresh_expired(Utc.timestamp(1623981673, 0)),
+            false
+        );
     }
 
     #[test]

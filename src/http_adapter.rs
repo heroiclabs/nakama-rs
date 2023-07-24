@@ -19,6 +19,8 @@ use std::fmt::{Display, Formatter};
 use crate::api;
 use crate::client_adapter::ClientAdapter;
 use async_trait::async_trait;
+use base64::engine::general_purpose;
+use base64::Engine;
 use isahc::prelude::*;
 use nanoserde::{DeJson, DeJsonErr};
 use std::io;
@@ -64,7 +66,7 @@ impl ClientAdapter for RestHttpAdapter {
             api::Authentication::Basic { username, password } => {
                 format!(
                     "Basic {}",
-                    base64::encode(&format!("{}:{}", username, password))
+                    general_purpose::STANDARD.encode(&format!("{}:{}", username, password))
                 )
             }
             api::Authentication::Bearer { token } => {

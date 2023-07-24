@@ -41,7 +41,9 @@ fn main() {
                 .expect("Failed to send status presence");
         });
 
-        socket.connect(&session, true, -1).await;
+        socket
+            .connect("ws://127.0.0.1:7350", &session, true, -1)
+            .await;
 
         let status_presence = rx_presence
             .recv()
