@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::api::{
-    ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList,
-    ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList,
-    ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks,
-    ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList,
-    ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject,
-};
+use crate::api::{ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList, ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, CreateLeaderboardRes, Leaderboard};
 use crate::api_gen::ApiAccount;
 use crate::session::Session;
 use async_trait::async_trait;
@@ -496,6 +490,12 @@ pub trait Client {
         override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error>;
+
+    async fn create_leaderboard(
+        &self,
+        session: &Session,
+        override_operator: ApiOverrideOperator,
+    ) -> Result<Leaderboard, Self::Error>;
 
     async fn write_storage_objects(
         &self,

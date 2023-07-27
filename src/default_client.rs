@@ -29,21 +29,7 @@
 //! You can pass session data that will be bundled in the session token using the `vars` parameter.
 //!
 use crate::api;
-use crate::api::{
-    ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice, ApiAccountEmail,
-    ApiAccountFacebook, ApiAccountGameCenter, ApiAccountGoogle, ApiAccountSteam,
-    ApiChannelMessageList, ApiCreateGroupRequest, ApiDeleteStorageObjectId,
-    ApiDeleteStorageObjectsRequest, ApiEvent, ApiFriendList, ApiGroup, ApiGroupList,
-    ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiLinkSteamRequest,
-    ApiMatchList, ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId,
-    ApiReadStorageObjectsRequest, ApiRpc, ApiSessionLogoutRequest, ApiSessionRefreshRequest,
-    ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList,
-    ApiTournamentRecordList, ApiUpdateAccountRequest, ApiUpdateGroupRequest, ApiUserGroupList,
-    ApiUsers, ApiValidatePurchaseAppleRequest, ApiValidatePurchaseGoogleRequest,
-    ApiValidatePurchaseHuaweiRequest, ApiValidatePurchaseResponse, ApiWriteStorageObject,
-    RestRequest, WriteLeaderboardRecordRequestLeaderboardRecordWrite,
-    WriteTournamentRecordRequestTournamentRecordWrite,
-};
+use crate::api::{ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice, ApiAccountEmail, ApiAccountFacebook, ApiAccountGameCenter, ApiAccountGoogle, ApiAccountSteam, ApiChannelMessageList, ApiCreateGroupRequest, ApiDeleteStorageObjectId, ApiDeleteStorageObjectsRequest, ApiEvent, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiLinkSteamRequest, ApiMatchList, ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiReadStorageObjectsRequest, ApiRpc, ApiSessionLogoutRequest, ApiSessionRefreshRequest, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUpdateAccountRequest, ApiUpdateGroupRequest, ApiUserGroupList, ApiUsers, ApiValidatePurchaseAppleRequest, ApiValidatePurchaseGoogleRequest, ApiValidatePurchaseHuaweiRequest, ApiValidatePurchaseResponse, ApiWriteStorageObject, CreateLeaderboard, CreateLeaderboardRes, Leaderboard, RestRequest, WriteLeaderboardRecordRequestLeaderboardRecordWrite, WriteTournamentRecordRequestTournamentRecordWrite};
 use crate::api_gen::{ApiSession, ApiWriteStorageObjectsRequest};
 use crate::client::Client;
 use crate::client_adapter::ClientAdapter;
@@ -2405,6 +2391,35 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
         self.refresh_session(session).await?;
         self.send(request).await
+    }
+
+    /// Write a leaderboard record.
+    ///
+    /// # Example
+    /// ```
+    /// # #![feature(async_closure)]
+    /// # use nakama_rs::api::ApiOverrideOperator;
+    /// use nakama_rs::test_helpers::*;
+    /// # run_in_example(async move |client, session| {
+    ///     client.create_leaderboard(&session, ApiOverrideOperator::SET).await
+    ///     .expect("Failed to write leaderboard record");
+    /// # Ok(())
+    /// # })
+    /// ```
+    async fn create_leaderboard(
+        &self,
+        session: &Session,
+        operator: ApiOverrideOperator,
+    ) -> Result<Leaderboard, Self::Error> {
+        let request = api::create_leaderboard(
+            &session.get_auth_token(),
+            CreateLeaderboard { operator: operator.to_string() },
+        );
+
+        self.refresh_session(session).await?;
+        let data = self.send(request).await?;
+        let data: Leaderboard = serde_json::from_str(&data.payload).unwrap();
+        Ok(data)
     }
 
     /// Write objects to the storage engine.

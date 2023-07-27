@@ -59,7 +59,7 @@ async fn main() -> anyhow::Result<()> {
                 return v;
             }
 
-            sleep(Duration::from_millis(500));
+            sleep(Duration::from_millis(1000));
         }
     });
     let session = client
@@ -79,14 +79,14 @@ async fn main() -> anyhow::Result<()> {
     numeric_properties.insert("mmr".to_string(), 1500.0);
     numeric_properties.insert("room_id".to_string(), 30.0);
     let mut string_properties = HashMap::new();
-    string_properties.insert("battle_type".to_string(), "QuickMatch1v1".to_string());
+    string_properties.insert("battle_type".to_string(), "QuickMatch".to_string());
     let ticked = web_socket
         .add_matchmaker(&Matchmaker {
             min_count: 2,
             max_count: 2,
             string_properties,
             numeric_properties,
-            query: "+properties.battle_type:QuickMatch1v1 -properties.room_id:30 properties.mmr:>=1400 properties.mmr:<=1600".to_string(),
+            query: "+properties.battle_type:QuickMatch -properties.room_id:30 properties.mmr:>=1400 properties.mmr:<=1600".to_string(),
         })
         .await
         .expect("Failed to join chat");

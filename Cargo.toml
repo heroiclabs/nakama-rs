@@ -24,6 +24,7 @@ serde = { version = "1", features = ["derive", "rc"] }
 parking_lot = { version = "0.12.1", features = ["serde", "arc_lock"] }
 futures = "0.3.15"
 hyper = "=0.13.10"
+serde_json = "1.0.100"
 
 
 [dev-dependencies]
