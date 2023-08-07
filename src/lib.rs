@@ -248,6 +248,8 @@ pub mod web_socket;
 pub mod web_socket_adapter;
 
 pub mod test_helpers;
+pub mod types;
+
 pub use client::Client;
 pub use default_client::DefaultClient;
 

@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::api::{ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList, ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, CreateLeaderboardRes, Leaderboard};
+use crate::api::{
+    ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList,
+    ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList,
+    ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks,
+    ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList,
+    ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, Leaderboard,
+};
 use crate::api_gen::ApiAccount;
 use crate::session::Session;
+use crate::types::SortOrder;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
@@ -495,6 +502,7 @@ pub trait Client {
         &self,
         session: &Session,
         override_operator: ApiOverrideOperator,
+        sort_order: SortOrder,
     ) -> Result<Leaderboard, Self::Error>;
 
     async fn write_storage_objects(

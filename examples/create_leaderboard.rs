@@ -23,6 +23,7 @@ use futures::executor::block_on;
 use simple_logger::SimpleLogger;
 
 use log::{trace, LevelFilter};
+use nakama_rs::api::ApiOverrideOperator;
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
 use nakama_rs::http_adapter::RestHttpAdapter;
@@ -32,7 +33,6 @@ use nakama_rs::web_socket::WebSocket;
 use nakama_rs::web_socket_adapter::WebSocketAdapter;
 use nakama_rs::*;
 use tokio::sync::mpsc::channel;
-use nakama_rs::api::ApiOverrideOperator;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,9 +44,13 @@ async fn main() -> anyhow::Result<()> {
 
     let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
     let client = DefaultClient::new(http_adapter, "defaultkey", "");
-    let session = client.authenticate_custom("00000000-0000-0000-0000-000000000000", None, true, Default::default()).await?;
+    let session = client
+        .authenticate_custom("00000000", None, true, Default::default())
+        .await?;
     println!("{:#?}", session);
-    let data = client.create_leaderboard(&session, ApiOverrideOperator::SET).await?;
+    let data = client
+        .create_leaderboard(&session, ApiOverrideOperator::SET)
+        .await?;
     println!("{:?}", data);
     Ok(())
 }

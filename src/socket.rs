@@ -735,4 +735,3 @@ pub trait Socket {
         content: &str,
     ) -> Result<ChannelMessageAck, Self::Error>;
 }
-
