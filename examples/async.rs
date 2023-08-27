@@ -76,8 +76,12 @@ fn main() {
                 .await;
             let session = session.unwrap();
             let session2 = session2.unwrap();
-            web_socket.connect(&session, true, -1).await;
-            web_socket2.connect(&session2, true, -1).await;
+            web_socket
+                .connect("ws://127.0.0.1:7350", &session, true, -1)
+                .await;
+            web_socket2
+                .connect("ws://127.0.0.1:7350", &session2, true, -1)
+                .await;
         }
     });
 

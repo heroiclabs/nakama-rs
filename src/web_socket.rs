@@ -31,19 +31,20 @@ use log::{error, trace};
 use nanoserde::{DeJson, DeJsonErr, SerJson};
 use std::collections::HashMap;
 use std::error;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::default_client::str_slice_to_owned;
 use crate::matchmaker::Matchmaker;
 use crate::web_socket_adapter::WebSocketAdapter;
-use oneshot;
-use oneshot::RecvError;
+use base64::engine::general_purpose;
+use base64::Engine;
+use parking_lot::Mutex;
 use std::fmt::{Debug, Display, Formatter};
 
 pub enum WebSocketError<A: SocketAdapter> {
     AdapterError(A::Error),
     TimeoutError,
-    RecvError(RecvError),
+    RecvError(tokio::sync::oneshot::error::RecvError),
     ApiError(Error),
     DeJsonError(DeJsonErr),
 }
@@ -71,8 +72,9 @@ impl<A: SocketAdapter> error::Error for WebSocketError<A> {}
 #[derive(Default)]
 struct SharedState {
     cid: i64,
-    connected: Vec<oneshot::Sender<()>>,
-    responses: HashMap<i64, oneshot::Sender<Result<WebSocketMessageEnvelope, DeJsonErr>>>,
+    connected: Vec<tokio::sync::oneshot::Sender<()>>,
+    responses:
+        HashMap<i64, tokio::sync::oneshot::Sender<Result<WebSocketMessageEnvelope, DeJsonErr>>>,
     timeouts: HashMap<i64, i64>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
@@ -111,7 +113,7 @@ impl<A: SocketAdapter> Clone for WebSocket<A> {
 fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
     trace!("handle_message: Received message: {:?}", msg);
     let result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
-    let mut shared_state = shared_state.lock().unwrap();
+    let mut shared_state = shared_state.lock();
     match result {
         Ok(event) => {
             if let Some(ref cid) = event.cid {
@@ -119,7 +121,7 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 let cid = cid.parse::<i64>().unwrap();
                 if let Some(response_event) = shared_state.responses.remove(&cid) {
                     let result = response_event.send(Ok(event));
-                    if let Err(err) = result {
+                    if let Err(Err(err)) = result {
                         error!("handle_message: send error: {}", err);
                     }
                 }
@@ -231,7 +233,7 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                         if let Some(response_event) = shared_state.responses.remove(&cid) {
                             // Send DeJsonErr
                             let result = response_event.send(Err(err));
-                            if let Err(err) = result {
+                            if let Err(Err(err)) = result {
                                 error!("handle_message: Received send error: {}", err)
                             }
                         }
@@ -263,30 +265,26 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
             })),
         };
 
-        web_socket
-            .adapter
-            .lock()
-            .expect("panic inside other mutex!")
-            .on_received({
-                let shared_state = web_socket.shared_state.clone();
-                move |msg| match msg {
-                    Err(error) => {
-                        error!("on_received: {}", error);
-                        return;
-                    }
-                    Ok(msg) => {
-                        trace!("on_received: {}", msg);
-                        handle_message(&shared_state, &msg);
-                    }
+        web_socket.adapter.lock().on_received({
+            let shared_state = web_socket.shared_state.clone();
+            move |msg| match msg {
+                Err(error) => {
+                    error!("on_received: {}", error);
+                    return;
                 }
-            });
+                Ok(msg) => {
+                    trace!("on_received: {}", msg);
+                    handle_message(&shared_state, &msg);
+                }
+            }
+        });
 
         {
-            let mut adapter = web_socket.adapter.lock().unwrap();
+            let mut adapter = web_socket.adapter.lock();
             adapter.on_closed({
                 let shared_state = web_socket.shared_state.clone();
                 move || {
-                    if let Some(ref cb) = shared_state.lock().unwrap().on_closed {
+                    if let Some(ref cb) = shared_state.lock().on_closed {
                         cb()
                     }
                 }
@@ -295,21 +293,13 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
             adapter.on_connected({
                 let shared_state = web_socket.shared_state.clone();
                 move || {
-                    if let Some(ref cb) = shared_state.lock().unwrap().on_connected {
+                    if let Some(ref cb) = shared_state.lock().on_connected {
                         cb()
                     }
 
-                    shared_state
-                        .lock()
-                        .unwrap()
-                        .connected
-                        .drain(..)
-                        .for_each(|sender| {
-                            let result = sender.send(());
-                            if let Err(err) = result {
-                                error!("on_connected: Received send error: {}", err)
-                            }
-                        });
+                    shared_state.lock().connected.drain(..).for_each(|sender| {
+                        sender.send(()).unwrap();
+                    });
                 }
             });
         }
@@ -318,12 +308,11 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
     }
 
     pub fn tick(&self) {
-        self.adapter
-            .lock()
-            .expect("panic inside other mutex!")
-            .tick();
+        {
+            self.adapter.lock().tick();
+        }
 
-        let mut shared_state = self.shared_state.lock().unwrap();
+        let mut shared_state = self.shared_state.lock();
 
         // TODO: Use a clock!
         let (timeout_finished, timeouts) = shared_state
@@ -341,7 +330,7 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
 
     fn make_envelope_with_cid(&self) -> (WebSocketMessageEnvelope, i64) {
         let cid = {
-            let mut state = self.shared_state.lock().expect("Panic inside other mutex!");
+            let mut state = self.shared_state.lock();
             state.cid += 1;
             state.cid
         };
@@ -366,7 +355,6 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
         trace!("send: Sending message: {:?}", data);
         self.adapter
             .lock()
-            .expect("panic inside other mutex!")
             .send(data, reliable)
             .map_err(|err| WebSocketError::AdapterError(err))
     }
@@ -375,15 +363,18 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
         &self,
         cid: i64,
     ) -> Result<WebSocketMessageEnvelope, <Self as Socket>::Error> {
-        let (tx, rx) = oneshot::channel::<Result<WebSocketMessageEnvelope, DeJsonErr>>();
+        let (tx, rx) =
+            tokio::sync::oneshot::channel::<Result<WebSocketMessageEnvelope, DeJsonErr>>();
 
         {
-            let mut shared_state = self.shared_state.lock().unwrap();
+            let mut shared_state = self.shared_state.lock();
             shared_state.responses.insert(cid, tx);
-            shared_state.timeouts.insert(cid, 2000);
+            shared_state.timeouts.insert(cid, 20000);
         }
 
-        let result = rx.await.map_err(|err| WebSocketError::RecvError(err))?;
+        let result = rx
+            .await
+            .map_err(|err| WebSocketError::RecvError(err.into()))?;
         match result {
             Ok(message) => {
                 if let Some(error) = message.error {
@@ -407,7 +398,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn() + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_closed = Some(Box::new(callback));
+        self.shared_state.lock().on_closed = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when the socket is connected
@@ -415,7 +406,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn() + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_connected = Some(Box::new(callback));
+        self.shared_state.lock().on_connected = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a chat message was received
@@ -423,10 +414,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(ApiChannelMessage) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_channel_message = Some(Box::new(callback));
+        self.shared_state.lock().on_received_channel_message = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a presence change for joins and leaves in a chat channel was received.
@@ -434,10 +422,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(ChannelPresenceEvent) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_channel_presence = Some(Box::new(callback));
+        self.shared_state.lock().on_received_channel_presence = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when an error is received.
@@ -445,7 +430,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(Error) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_error = Some(Box::new(callback));
+        self.shared_state.lock().on_received_error = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a matchmaker matched the user.
@@ -453,10 +438,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(MatchmakerMatched) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_matchmaker_matched = Some(Box::new(callback));
+        self.shared_state.lock().on_received_matchmaker_matched = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when receiving a match state message
@@ -464,7 +446,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(MatchData) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_match_state = Some(Box::new(callback));
+        self.shared_state.lock().on_received_match_state = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when players join or leave a match.
@@ -472,7 +454,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(MatchPresenceEvent) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_match_presence = Some(Box::new(callback));
+        self.shared_state.lock().on_received_match_presence = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a notification is received
@@ -480,7 +462,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(ApiNotification) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_notification = Some(Box::new(callback));
+        self.shared_state.lock().on_received_notification = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a party is closed.
@@ -488,7 +470,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(PartyClose) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_party_close = Some(Box::new(callback));
+        self.shared_state.lock().on_received_party_close = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a party data is received.
@@ -496,7 +478,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(PartyData) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_party_data = Some(Box::new(callback));
+        self.shared_state.lock().on_received_party_data = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a party join request is received.
@@ -504,10 +486,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(PartyJoinRequest) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_party_join_request = Some(Box::new(callback));
+        self.shared_state.lock().on_received_party_join_request = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when a party leader message is received.
@@ -515,7 +494,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(PartyLeader) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_party_leader = Some(Box::new(callback));
+        self.shared_state.lock().on_received_party_leader = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when users join or leave a party.
@@ -523,7 +502,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(PartyPresenceEvent) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_party_presence = Some(Box::new(callback));
+        self.shared_state.lock().on_received_party_presence = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when users update their online status.
@@ -531,10 +510,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(StatusPresenceEvent) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_status_presence = Some(Box::new(callback));
+        self.shared_state.lock().on_received_status_presence = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when users join or leave a realtime stream.
@@ -542,10 +518,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(StreamPresenceEvent) + Send + 'static,
     {
-        self.shared_state
-            .lock()
-            .unwrap()
-            .on_received_stream_presence = Some(Box::new(callback));
+        self.shared_state.lock().on_received_stream_presence = Some(Box::new(callback));
     }
 
     /// Register a callback that is dispatched when realtime stream data is received.
@@ -553,7 +526,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn(StreamData) + Send + 'static,
     {
-        self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
+        self.shared_state.lock().on_received_stream_state = Some(Box::new(callback));
     }
 
     /// Accept a join request.
@@ -701,34 +674,39 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     /// # use nakama_rs::test_helpers::*;
     /// # use std::collections::HashMap;
     /// # run_in_socket_example(async move |client, session, socket| {
-    /// socket.connect(&session, true, -1).await;
+    /// socket.connect("ws://127.0.0.1:7350", &session, true, -1).await;
     /// # Ok(())
     /// # });
     /// ```
-    async fn connect(&self, session: &Session, appear_online: bool, connect_timeout: i32) {
-        let ws_url = "ws://127.0.0.1";
-        let port = 7350;
+    async fn connect(
+        &self,
+        socket_addr: &str,
+        session: &Session,
+        appear_online: bool,
+        connect_timeout: i32,
+    ) {
+        // let ws_url = "ws://127.0.0.1:7350";
+        // let port = 7350;
 
         let ws_addr = format!(
-            "{}:{}/ws?lang=en&status={}&token={}",
-            ws_url,
-            port,
+            "{}/ws?lang=en&status={}&token={}",
+            socket_addr,
             appear_online,
             session.get_auth_token(),
         );
 
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
-        self.shared_state.lock().unwrap().connected.push(tx);
+        {
+            self.shared_state.lock().connected.push(tx);
+        }
 
-        self.adapter
-            .lock()
-            .unwrap()
-            .connect(&ws_addr, connect_timeout);
+        {
+            self.adapter.lock().connect(&ws_addr, connect_timeout);
+        }
 
-        let result = rx.await;
-        if let Err(err) = result {
-            error!("connect: RecvError: {}", err);
+        if let Err(e) = rx.await {
+            error!("connect: RecvError: {}", e);
         }
     }
 
@@ -1343,7 +1321,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.party_data_send = Some(PartyDataSend {
             party_id: party_id.to_owned(),
             op_code,
-            data: base64::encode(data),
+            data: general_purpose::STANDARD.encode(data),
         });
 
         let json = envelope.serialize_json();
@@ -1473,12 +1451,14 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 #[cfg(test)]
 mod test {
     use nanoserde::SerJson;
+
     #[derive(SerJson)]
     struct TestStruct {
         a: Option<String>,
         b: Option<String>,
         c: Option<String>,
     }
+
     #[test]
     fn test_serialization() {
         let test_struct = TestStruct {

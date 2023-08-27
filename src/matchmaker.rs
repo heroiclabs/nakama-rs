@@ -160,15 +160,11 @@ impl<'a> Matchmaker {
     pub fn string_properties(&self) -> String {
         let mut str = "{".to_owned();
 
-        let mut properties = self
+        let properties = self
             .string_properties
             .iter()
             .map(|property| format!("\"{}\": \"{}\"", property.0, property.1))
             .collect::<Vec<String>>();
-
-        // The tests need to have a deterministic order
-        #[cfg(test)]
-        properties.sort();
 
         str += &properties.join(",");
 
@@ -179,15 +175,11 @@ impl<'a> Matchmaker {
     pub fn numeric_properties(&self) -> String {
         let mut str = "{".to_owned();
 
-        let mut properties = self
+        let properties = self
             .numeric_properties
             .iter()
             .map(|property| format!("\"{}\": {}", property.0, property.1))
             .collect::<Vec<String>>();
-
-        // The tests need to have a deterministic order
-        #[cfg(test)]
-        properties.sort();
 
         str += &properties.join(",");
 

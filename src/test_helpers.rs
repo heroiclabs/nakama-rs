@@ -23,9 +23,10 @@ pub use crate::socket::Socket;
 use crate::web_socket::WebSocket;
 use crate::web_socket_adapter::WebSocketAdapter;
 use core::time::Duration;
-use futures::executor::block_on;
 use std::future::Future;
 use std::thread::{sleep, spawn};
+use tokio::runtime::Handle;
+use tokio::task::block_in_place;
 
 pub fn run_in_example<
     T,
@@ -35,12 +36,14 @@ pub fn run_in_example<
     f: C,
 ) {
     let client = DefaultClient::new_with_adapter_and_defaults();
-    block_on(async {
-        let session = client
-            .authenticate_device("exampletestid", None, true, HashMap::new())
-            .await
-            .expect("Failed to authenticate user");
-        f(client, session).await.expect("Test failed");
+    block_in_place(|| {
+        Handle::current().block_on(async {
+            let session = client
+                .authenticate_device("exampletestid", None, true, HashMap::new())
+                .await
+                .expect("Failed to authenticate user");
+            f(client, session).await.expect("Test failed");
+        })
     })
 }
 
@@ -54,12 +57,14 @@ pub fn run_in_socket_example<
     let client = DefaultClient::new_with_adapter_and_defaults();
     let socket = WebSocket::new_with_adapter();
     tick_socket(&socket);
-    block_on(async {
-        let session = client
-            .authenticate_device("exampletestid", None, true, HashMap::new())
-            .await
-            .expect("Failed to authenticate user");
-        f(client, session, socket).await.expect("Test failed");
+    block_in_place(|| {
+        Handle::current().block_on(async {
+            let session = client
+                .authenticate_device("exampletestid", None, true, HashMap::new())
+                .await
+                .expect("Failed to authenticate user");
+            f(client, session, socket).await.expect("Test failed");
+        })
     })
 }
 
@@ -148,8 +153,12 @@ pub async fn sockets_with_users(
     let account1 = client.get_account(&session).await.unwrap();
     let account2 = client.get_account(&session2).await.unwrap();
 
-    socket.connect(&session, true, -1).await;
-    socket2.connect(&session2, true, -1).await;
+    socket
+        .connect("ws://127.0.0.1:7350", &session, true, -1)
+        .await;
+    socket2
+        .connect("ws://127.0.0.1:7350", &session2, true, -1)
+        .await;
 
     (socket, socket2, account1, account2)
 }

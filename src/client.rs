@@ -17,10 +17,11 @@ use crate::api::{
     ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList,
     ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks,
     ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList,
-    ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject,
+    ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, Leaderboard,
 };
 use crate::api_gen::ApiAccount;
 use crate::session::Session;
+use crate::types::SortOrder;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
@@ -496,6 +497,13 @@ pub trait Client {
         override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error>;
+
+    async fn create_leaderboard(
+        &self,
+        session: &Session,
+        override_operator: ApiOverrideOperator,
+        sort_order: SortOrder,
+    ) -> Result<Leaderboard, Self::Error>;
 
     async fn write_storage_objects(
         &self,

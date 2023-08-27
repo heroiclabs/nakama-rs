@@ -121,7 +121,7 @@
 //!     let mut socket = WebSocket::new_with_adapter();
 //!     socket.on_connected(|| println!("Socket connected."));
 //!     socket.on_closed(|| println!("Socket closed."));
-//!     socket.connect(&session).await;
+//!     socket.connect("ws://127.0.0.1:7350", &session).await;
 //! # });
 //! ```
 //!
@@ -246,6 +246,9 @@ pub mod socket_adapter;
 pub mod test_helpers;
 pub mod web_socket;
 pub mod web_socket_adapter;
+
+pub mod test_helpers;
+pub mod types;
 
 pub use client::Client;
 pub use default_client::DefaultClient;
